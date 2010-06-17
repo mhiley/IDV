@@ -24,16 +24,11 @@ package ucar.unidata.util;
 
 
 
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScheme;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.auth.CredentialsNotAvailableException;
-import org.apache.commons.httpclient.auth.CredentialsProvider;
-import org.apache.commons.httpclient.auth.RFC2617Scheme;
 
 
-
+import org.apache.http.auth.*;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.auth.RFC2617Scheme;
 import ucar.unidata.util.GuiUtils;
 import ucar.unidata.util.Misc;
 import ucar.unidata.xml.XmlEncoder;
@@ -97,6 +92,9 @@ public class AccountManager implements CredentialsProvider,
     /** This is where we write and read the persistent state   */
     private File stateDir;
 
+    /** Save last created credentials */
+    private Credentials currentCredentials = null;
+
 
     /**
      * constructor
@@ -143,19 +141,19 @@ public class AccountManager implements CredentialsProvider,
      *
      * @return Null if the user presses cancel. Else return the credentials
      *
-     * @throws CredentialsNotAvailableException On badness
+     * @throws AuthenticationException On badness
      */
     public Credentials getCredentials(AuthScheme scheme, String host,
                                       int port, boolean proxy)
-            throws CredentialsNotAvailableException {
+            throws AuthenticationException {
 
         if (scheme == null) {
-            throw new CredentialsNotAvailableException(
+            throw new AuthenticationException(
                 "Null authentication scheme: ");
         }
 
         if ( !(scheme instanceof RFC2617Scheme)) {
-            throw new CredentialsNotAvailableException(
+            throw new AuthenticationException(
                 "Unsupported authentication scheme: "
                 + scheme.getSchemeName());
         }
@@ -169,8 +167,9 @@ public class AccountManager implements CredentialsProvider,
         if (userInfo == null) {
             return null;
         }
-        return new UsernamePasswordCredentials(userInfo.getUserId(),
+        currentCredentials = new UsernamePasswordCredentials(userInfo.getUserId(),
                 userInfo.getPassword());
+        return currentCredentials;
     }
 
 
@@ -333,6 +332,17 @@ public class AccountManager implements CredentialsProvider,
         dialog.setLocation(200, 200);
     }
 
+    public void clear()
+    {
 
+    }
+    public void setCredentials(AuthScope authscope, Credentials credentials)
+    {
+
+    }
+    public Credentials getCredentials(AuthScope authscope)
+    {
+        return     currentCredentials;
+    }
 }
 
