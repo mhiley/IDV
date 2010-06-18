@@ -1342,7 +1342,7 @@ public class RepositoryClient extends RepositoryBase {
             zos.write(bytes, 0, bytes.length);
             zos.closeEntry();
         }
-        zos.close();
+        zos.close();  
         bos.close();
 
         List<HttpFormEntry> postEntries = new ArrayList<HttpFormEntry>();
