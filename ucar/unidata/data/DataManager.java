@@ -21,8 +21,11 @@
 package ucar.unidata.data;
 
 
-import org.apache.http.client.CredentialsProvider;
-import opendap.dap.HttpWrap;
+
+//import org.apache.http.client.CredentialsProvider;
+//import opendap.dap.HttpWrap;
+
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -84,6 +87,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import javax.swing.filechooser.FileFilter;
+
+
 
 
 /**
@@ -369,6 +374,7 @@ public class DataManager {
                 .setMemoryPercent(dataContext.getIdv().getStateManager()
                     .getPreferenceOrProperty(PROP_CACHE_PERCENT, 0.25));
 
+            /*
             AccountManager accountManager =
                 AccountManager.getGlobalAccountManager();
             if (accountManager == null) {
@@ -376,17 +382,18 @@ public class DataManager {
                     dataContext.getIdv().getStore().getUserDirectory());
                 AccountManager.setGlobalAccountManager(accountManager);
             }
-            CredentialsProvider provider =
-                accountManager;
+            CredentialsProvider provider = accountManager;
             try {
-            HttpWrap client = new HttpWrap();
-            client.setCredentialsProvider(provider);
-            // fix opendap.dap.DConnect2.setHttpClient(client);
-            ucar.unidata.io.http.HTTPRandomAccessFile.setHttpClient(client);
-                } catch (Exception exc) {
-                    LogUtil.printException(log_, "Cannot create http client",
-                                           exc);
+                HttpWrap client = new HttpWrap();
+                client.setGlobalCredentialsProvider(provider);
+                // fix opendap.dap.DConnect2.setHttpClient(client);
+                ucar.unidata.io.http.HTTPRandomAccessFile.setHttpClient(
+                    client);
+            } catch (Exception exc) {
+                LogUtil.printException(log_, "Cannot create http client",
+                                       exc);
             }
+            */
         }
 
 

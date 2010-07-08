@@ -958,7 +958,6 @@ return new Result(title, sb);
                     TypeHandler.TYPE_ANY));
         }
 
-
         List<Entry> entries  = new ArrayList<Entry>();
         String      dataType = "";
         if (request.defined(ARG_DATATYPE)) {
@@ -1315,7 +1314,9 @@ return new Result(title, sb);
             }
             if (request.defined(ARG_URL)) {
                 entry.setResource(new Resource(request.getString(ARG_URL,
-                        BLANK)));
+                                                                 BLANK),  
+                                               Resource.TYPE_URL,
+                                               request.getString(ARG_MD5, null),request.get(ARG_FILESIZE,(long)-1)));
             }
 
 
@@ -1553,12 +1554,36 @@ return new Result(title, sb);
     private void setEntryState(Request request, Entry entry, Group parent,
                                boolean newEntry)
             throws Exception {
-        entry.setSouth(request.get(ARG_AREA + "_south", entry.getSouth()));
-        entry.setNorth(request.get(ARG_AREA + "_north", entry.getNorth()));
-        entry.setWest(request.get(ARG_AREA + "_west", entry.getWest()));
-        entry.setEast(request.get(ARG_AREA + "_east", entry.getEast()));
-        entry.getTypeHandler().initializeEntry(request, entry, parent,
-                newEntry);
+        if (request.defined(ARG_LOCATION_LATITUDE) &&
+            request.defined(ARG_LOCATION_LONGITUDE)) {
+            entry.setNorth(request.get(ARG_LOCATION_LATITUDE, entry.getNorth()));
+            entry.setWest(request.get(ARG_LOCATION_LONGITUDE, entry.getWest()));
+            entry.setSouth(request.get(ARG_LOCATION_LATITUDE, entry.getSouth()));
+            entry.setEast(request.get(ARG_LOCATION_LONGITUDE, entry.getEast()));
+        } else {
+            entry.setSouth(request.get(ARG_AREA + "_south", entry.getSouth()));
+            entry.setNorth(request.get(ARG_AREA + "_north", entry.getNorth()));
+            entry.setWest(request.get(ARG_AREA + "_west", entry.getWest()));
+            entry.setEast(request.get(ARG_AREA + "_east", entry.getEast()));
+        }
+
+        double altitudeTop = Entry.NONGEO;
+        double altitudeBottom = Entry.NONGEO;
+        if(request.defined(ARG_ALTITUDE)) {
+            altitudeTop = altitudeBottom =   request.get(ARG_ALTITUDE, Entry.NONGEO);
+        } else {
+            if(request.defined(ARG_ALTITUDE_TOP)) {
+                altitudeTop = request.get(ARG_ALTITUDE_TOP, Entry.NONGEO);
+            }
+            if(request.defined(ARG_ALTITUDE_BOTTOM)) {
+                altitudeBottom = request.get(ARG_ALTITUDE_BOTTOM, Entry.NONGEO);
+            }
+        }
+        entry.setAltitudeTop(altitudeTop);
+        entry.setAltitudeBottom(altitudeBottom);
+
+        entry.getTypeHandler().initializeEntryFromForm(request, entry, parent,
+                                                       newEntry);
     }
 
 
@@ -2166,6 +2191,9 @@ return new Result(title, sb);
         //        exclude.add(TYPE_GROUP);
         List<TypeHandler> typeHandlers = getRepository().getTypeHandlers();
         for (TypeHandler typeHandler : typeHandlers) {
+            if(!typeHandler.getForUser()) {
+                continue;
+            }
             if (typeHandler.isAnyHandler()) {
                 continue;
             }
@@ -3250,6 +3278,16 @@ return new Result(title, sb);
                 entry.getEast() + "")));
         entry.setWest(Misc.decodeLatLon(XmlUtil.getAttribute(node, ATTR_WEST,
                 entry.getWest() + "")));
+
+        entry.setAltitudeTop(XmlUtil.getAttribute(node, ATTR_ALTITUDE_TOP,
+                                                  entry.getAltitudeTop()));
+        entry.setAltitudeBottom(XmlUtil.getAttribute(node, ATTR_ALTITUDE_BOTTOM,
+                                                     entry.getAltitudeBottom()));
+        entry.setAltitudeTop(XmlUtil.getAttribute(node, ATTR_ALTITUDE,
+                                                  entry.getAltitudeTop()));
+        entry.setAltitudeBottom(XmlUtil.getAttribute(node, ATTR_ALTITUDE,
+                                                     entry.getAltitudeBottom()));
+                                                   
         NodeList entryChildren = XmlUtil.getElements(node);
         for (Element entryChild : (List<Element>) entryChildren) {
             String tag = entryChild.getTagName();
@@ -3262,7 +3300,7 @@ return new Result(title, sb);
                 //                        + node.getTagName());
             }
         }
-        entry.getTypeHandler().initializeEntry(request, entry, node);
+        entry.getTypeHandler().initializeEntryFromXml(request, entry, node);
         return entry;
 
     }
@@ -4724,7 +4762,7 @@ return new Result(title, sb);
                     String entryType = results.getString(2);
                     TypeHandler typeHandler =
                         getRepository().getTypeHandler(entryType);
-                    entry = typeHandler.getEntry(results, abbreviated);
+                    entry = typeHandler.createEntryFromDatabase(results, abbreviated);
                     checkEntryFileTime(entry);
                 } finally {
                     getDatabaseManager().closeAndReleaseConnection(entryStmt);
@@ -4808,7 +4846,7 @@ return new Result(title, sb);
                         TypeHandler localTypeHandler =
                             getRepository().getTypeHandler(
                                 results.getString(2));
-                        entry = localTypeHandler.getEntry(results);
+                        entry = localTypeHandler.createEntryFromDatabase(results);
                         cacheEntry(entry);
                     }
                     if (seen.get(entry.getId()) != null) {
@@ -4997,6 +5035,8 @@ return new Result(title, sb);
             col++,
             getStorageManager().resourceToDB(entry.getResource().getPath()));
         statement.setString(col++, entry.getResource().getType());
+        statement.setString(col++, entry.getResource().getMd5());
+        statement.setLong(col++, entry.getResource().getFileSize());
         statement.setString(col++, entry.getDataType());
         //create date
         getDatabaseManager().setDate(statement, col++,
@@ -5021,6 +5061,8 @@ return new Result(title, sb);
         statement.setDouble(col++, entry.getNorth());
         statement.setDouble(col++, entry.getEast());
         statement.setDouble(col++, entry.getWest());
+        statement.setDouble(col++, entry.getAltitudeTop());
+        statement.setDouble(col++, entry.getAltitudeBottom());
         if ( !isNew) {
             statement.setString(col++, entry.getId());
         }
@@ -5144,27 +5186,28 @@ return new Result(title, sb);
             TypeHandler typeHandler = entry.getTypeHandler();
             typeHandler = typeHandler.getTypeHandlerForCopy(entry);
 
-            //            isNew = true;
-            String            sql           = typeHandler.getInsertSql(isNew);
-            PreparedStatement typeStatement = null;
-            if (sql != null) {
-                typeStatement = (PreparedStatement) typeStatements.get(sql);
+            List<TypeInsertInfo> typeInserts= new ArrayList<TypeInsertInfo>();
+            //            String            sql           = typeHandler.getInsertSql(isNew);
+            typeHandler.getInsertSql(isNew, typeInserts);
+            for(TypeInsertInfo tif: typeInserts) {
+                PreparedStatement typeStatement =  (PreparedStatement) typeStatements.get(tif.getSql());
                 if (typeStatement == null) {
-                    typeStatement = connection.prepareStatement(sql);
-                    typeStatements.put(sql, typeStatement);
+                    typeStatement = connection.prepareStatement(tif.getSql());
+                    typeStatements.put(tif.getSql(), typeStatement);
                 }
+                tif.setStatement(typeStatement);
             }
             //           System.err.println ("entry: " + entry.getId());
             setStatement(entry, entryStmt, isNew, typeHandler);
             batchCnt++;
             entryStmt.addBatch();
 
-            if (typeStatement != null) {
+            for(TypeInsertInfo tif: typeInserts) {
+                PreparedStatement typeStatement = tif.getStatement();
                 batchCnt++;
-                typeHandler.setStatement(entry, typeStatement, isNew);
+                tif.getTypeHandler().setStatement(entry, typeStatement, isNew);
                 typeStatement.addBatch();
             }
-
 
             List<Metadata> metadataList = entry.getMetadata();
             if (metadataList != null) {
@@ -5203,8 +5246,8 @@ return new Result(title, sb);
                 }
                 for (Enumeration keys = typeStatements.keys();
                         keys.hasMoreElements(); ) {
-                    typeStatement = (PreparedStatement) typeStatements.get(
-                        keys.nextElement());
+                    PreparedStatement typeStatement = (PreparedStatement) typeStatements.get(
+                                                                                             keys.nextElement());
                     //                        if(isNew)
                     typeStatement.executeBatch();
                     //                        else                            typeStatement.executeUpdate();
@@ -6473,7 +6516,7 @@ return new Result(title, sb);
                     String entryType = results.getString(2);
                     TypeHandler typeHandler =
                         getRepository().getTypeHandler(entryType);
-                    Entry entry = (Entry) typeHandler.getEntry(results);
+                    Entry entry = (Entry) typeHandler.createEntryFromDatabase(results);
                     entries.add(entry);
                     cacheEntry(entry);
                 }

@@ -102,10 +102,13 @@ public class RepositoryClient extends RepositoryBase {
     /** _more_ */
     private String lastId = "";
 
+
     /**
      * _more_
      */
-    public RepositoryClient() {}
+    public RepositoryClient() {
+        initCertificates();
+    }
 
     /**
      * _more_
@@ -123,6 +126,7 @@ public class RepositoryClient extends RepositoryBase {
         setUrlBase(serverUrl.getPath());
         this.user     = user;
         this.password = password;
+        initCertificates();
     }
 
 
@@ -161,9 +165,18 @@ public class RepositoryClient extends RepositoryBase {
         this.user     = user;
         this.password = password;
         setUrlBase(base);
+        initCertificates();
     }
 
 
+    /**
+     * If there is no trustStore property defined then always trust self-signed certificates
+     */
+    private void initCertificates() {
+        if(System.getProperty("javax.net.ssl.trustStore")==null) {
+            ucar.unidata.util.NaiveTrustProvider.setAlwaysTrust(true);
+        }
+    }
 
 
     /**
@@ -190,7 +203,6 @@ public class RepositoryClient extends RepositoryBase {
      */
     public String[] doPost(RequestUrl url, List<HttpFormEntry> entries)
             throws Exception {
-        System.err.println("url:" + url.getFullUrl());
         return HttpFormEntry.doPost(entries, url.getFullUrl());
     }
 
@@ -1342,7 +1354,7 @@ public class RepositoryClient extends RepositoryBase {
             zos.write(bytes, 0, bytes.length);
             zos.closeEntry();
         }
-        zos.close();  
+        zos.close();
         bos.close();
 
         List<HttpFormEntry> postEntries = new ArrayList<HttpFormEntry>();

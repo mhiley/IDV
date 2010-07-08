@@ -1,18 +1,18 @@
 /*
- * Copyright 1997-2006 Unidata Program Center/University Corporation for
+ * Copyright 1997-2010 Unidata Program Center/University Corporation for
  * Atmospheric Research, P.O. Box 3000, Boulder, CO 80307,
  * support@unidata.ucar.edu.
- *
+ * 
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or (at
  * your option) any later version.
- *
+ * 
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
  * General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with this library; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -23,12 +23,25 @@
 package ucar.unidata.util;
 
 
+import org.apache.commons.httpclient.Credentials;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScheme;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.auth.CredentialsNotAvailableException;
+import org.apache.commons.httpclient.auth.CredentialsProvider;
+import org.apache.commons.httpclient.auth.RFC2617Scheme;
 
-
-
-import org.apache.http.auth.*;
+/*
+import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.InvalidCredentialsException;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.auth.RFC2617Scheme;
+*/
+
+
 import ucar.unidata.util.GuiUtils;
 import ucar.unidata.util.Misc;
 import ucar.unidata.xml.XmlEncoder;
@@ -59,7 +72,7 @@ public class AccountManager implements CredentialsProvider,
                                        IOUtil.UserAccountManager {
 
 
-    /** The global account manager   */
+    /** The global account manager */
     private static AccountManager accountManager;
 
     /** for the gui */
@@ -89,7 +102,7 @@ public class AccountManager implements CredentialsProvider,
      */
     private Hashtable currentlyUsedOnes = new Hashtable();
 
-    /** This is where we write and read the persistent state   */
+    /** This is where we write and read the persistent state */
     private File stateDir;
 
     /** Save last created credentials */
@@ -104,6 +117,14 @@ public class AccountManager implements CredentialsProvider,
      */
     public AccountManager(File stateDir) {
         this.stateDir = stateDir;
+    }
+
+    /**
+     * _more_
+     */
+    public void clear() {
+        //TODO: Figure out what this should do
+        currentCredentials = null;
     }
 
     /**
@@ -132,34 +153,92 @@ public class AccountManager implements CredentialsProvider,
 
 
     /**
-     * Do the authentication
+     * _more_
      *
-     * @param scheme scheme
-     * @param host host
-     * @param port port
-     * @param proxy proxy
+     * @param scope _more_
+     * @param credentials _more_
+     */
+    public void setCredentials(AuthScope scope, Credentials credentials) {
+        //TODO: What should this do?
+        if (scope == null) {
+            throw new IllegalArgumentException(
+                "Authentication scope may not be null");
+        }
+
+
+        String key = scope.getHost() + ":" + scope.getPort() + ":"
+                     + scope.getRealm();
+        //        System.err.println ("got auth call " + key);
+
+        UserInfo userInfo = getUserNamePassword(key,
+                                "The server " + scope.getHost() + ":"
+                                + scope.getPort()
+                                + " requires a username/password");
+        if (userInfo == null) {
+            return;
+        }
+
+        if (credentials == null) {
+            currentCredentials =
+                new UsernamePasswordCredentials(userInfo.getUserId(),
+                    userInfo.getPassword());
+        } else {
+            currentCredentials = credentials;
+        }
+    }
+
+    /**
+     * Do the authentication
+     * @param authscope authscope
      *
      * @return Null if the user presses cancel. Else return the credentials
      *
-     * @throws AuthenticationException On badness
      */
-    public Credentials getCredentials(AuthScheme scheme, String host,
-                                      int port, boolean proxy)
-            throws AuthenticationException {
-
-        if (scheme == null) {
-            throw new AuthenticationException(
-                "Null authentication scheme: ");
+    //jeffmc:    public Credentials getCredentials(AuthScope authscope, String s,int x, boolean y) {
+    public Credentials getCredentials(AuthScheme authscope, String s,int x, boolean y) {
+        if (authscope == null) {
+            throw new IllegalArgumentException(
+                "Authentication scope may not be null");
         }
 
+        if (currentCredentials == null) {
+            //jeffmc: skip for now            setCredentials(authscope, null);
+        }
+
+        return currentCredentials;
+    }
+
+    /**
+     * _more_
+     *
+     * @param scope _more_
+     *
+     * @return _more_
+     */
+    public Credentials getCredentialsnew(AuthScope scope) {
+        //String host,                                   int port, boolean proxy
+        String host  = scope.getHost();
+        int    port  = scope.getPort();
+        String realm = scope.getRealm();
+
+        //    public Credentials getCredentials(AuthScheme scheme, String host,
+        //                                      int port, boolean proxy)
+        //            throws InvalidCredentialsException {
+
+        if (scope == null) {
+            throw new IllegalArgumentException("Null scope");
+        }
+
+        /*
+          //TODO: check if the scheme in the auth is rfc26217
         if ( !(scheme instanceof RFC2617Scheme)) {
-            throw new AuthenticationException(
+            throw new InvalidCredentialsException(
                 "Unsupported authentication scheme: "
                 + scheme.getSchemeName());
         }
+        */
 
-
-        String key = host + ":" + port + ":" + scheme.getRealm();
+        String key = host + ":" + port + ":" + realm;
         //        System.err.println ("got auth call " + key);
         UserInfo userInfo = getUserNamePassword(key,
                                 "The server " + host + ":" + port
@@ -167,9 +246,8 @@ public class AccountManager implements CredentialsProvider,
         if (userInfo == null) {
             return null;
         }
-        currentCredentials = new UsernamePasswordCredentials(userInfo.getUserId(),
+        return new UsernamePasswordCredentials(userInfo.getUserId(),
                 userInfo.getPassword());
-        return currentCredentials;
     }
 
 
@@ -332,17 +410,5 @@ public class AccountManager implements CredentialsProvider,
         dialog.setLocation(200, 200);
     }
 
-    public void clear()
-    {
 
-    }
-    public void setCredentials(AuthScope authscope, Credentials credentials)
-    {
-
-    }
-    public Credentials getCredentials(AuthScope authscope)
-    {
-        return     currentCredentials;
-    }
 }
-

@@ -24,17 +24,12 @@ package ucar.unidata.ui;
 
 
 
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.multipart.*;
 
-import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntity
-;import opendap.dap.HttpWrapException;
-import org.apache.http.Header;
-import opendap.dap.HttpWrap;
-import org.apache.http.entity.mime.content.ContentBody;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.InputStreamBody;
-import org.apache.http.entity.mime.content.StringBody;
+
+
 import ucar.unidata.util.GuiUtils;
 import ucar.unidata.util.IOUtil;
 import ucar.unidata.util.LogUtil;
@@ -108,7 +103,7 @@ public class HttpFormEntry {
     private boolean required = true;
 
     /** file part source */
-    private ContentBody filePartSource;
+    private PartSource filePartSource;
 
     /** filename */
     private String fileName;
@@ -126,8 +121,17 @@ public class HttpFormEntry {
                          final byte[] bytes) {
         this.name           = name;
         type                = TYPE_FILE;
-        this.filePartSource = new InputStreamBody( new ByteArrayInputStream(bytes),fileName);
-
+        this.filePartSource = new PartSource() {
+            public InputStream createInputStream() {
+                return new ByteArrayInputStream(bytes);
+            }
+            public String getFileName() {
+                return fileName;
+            }
+            public long getLength() {
+                return bytes.length;
+            }
+        };
     }
 
 
@@ -529,13 +533,27 @@ public class HttpFormEntry {
      *
      * @return the file part
      */
-    private ContentBody getFilePart() {
+    private FilePart getFilePart() {
         if (filePartSource == null) {
             final String file = getValue();
-            return new FileBody(new File(file));
-
+            return new FilePart(getName(), new PartSource() {
+                public InputStream createInputStream() {
+                    try {
+                        return IOUtil.getInputStream(file);
+                    } catch (Exception exc) {
+                        throw new WrapperException("Reading file:" + file,
+                                exc);
+                    }
+                }
+                public String getFileName() {
+                    return new File(file).getName();
+                }
+                public long getLength() {
+                    return new File(file).length();
+                }
+            });
         }
-        return filePartSource;
+        return new FilePart(getName(), filePartSource);
     }
 
     /**
@@ -568,35 +586,20 @@ public class HttpFormEntry {
      */
     public static String[] doPost(List entries, String urlPath) {
         try {
-            HttpWrap client      = new HttpWrap();
-            MultipartEntity me = new MultipartEntity();
-            for(int i=0;i<entries.size(); i++) {
-                HttpFormEntry e = (HttpFormEntry)entries.get(i);
-                switch (e.type) {
-                    case TYPE_INPUT:
-                    case TYPE_AREA:
-                        me.addPart(e.getName(),new StringBody(e.getValue()));
-                        break;
-                    case TYPE_FILE:
-                        me.addPart(e.getName(),e.getFilePart());
-                         break;
-                    default: continue;
-                }
-
-            }
+            PostMethod postMethod = null;
             int numTries = 0;
             while(numTries++<5) {
-
-                client.setMethodPost(urlPath);
-                client.execute();
-                if (client.getStatusCode() >= 300 && client.getStatusCode()<=399) {
-                    Header locationHeader = client.getHeader("location");
+                postMethod =  getMethod(entries, urlPath);
+                HttpClient client      = new HttpClient();
+                client.executeMethod(postMethod);
+                if (postMethod.getStatusCode() >= 300 && postMethod.getStatusCode()<=399) {
+                    Header locationHeader = postMethod.getResponseHeader("location");
                     if (locationHeader == null) {
                         return new String[] {"Error: No 'location' given on the redirect", null };
                     }
                     //Keep trying with the new location
                     urlPath = locationHeader.getValue();
-                    if(client.getStatusCode() == 301) {
+                    if(postMethod.getStatusCode() == 301) {
                         System.err.println("Warning: form post has been permanently moved to:" + urlPath);
                     }
                     continue;
@@ -605,8 +608,8 @@ public class HttpFormEntry {
                 break;
             }
             String result =
-                IOUtil.readContents(client.getContentStream());
-            if (client.getStatusCode() >= 300) {
+                IOUtil.readContents(postMethod.getResponseBodyAsStream());
+            if (postMethod.getStatusCode() >= 300) {
                 return new String[] { result, null };
             } else {
                 return new String[] { null, result };
@@ -618,9 +621,8 @@ public class HttpFormEntry {
     }
 
 
-    private static HttpWrap getMethod(List entries, String urlPath) throws HttpWrapException {
-     HttpWrap client  = new HttpWrap();
-        client.setMethodPost(urlPath);
+    private static PostMethod getMethod(List entries, String urlPath) {
+        PostMethod postMethod  = new PostMethod(urlPath);
         boolean    anyFiles    = false;
         int        count       = 0;
         List       goodEntries = new ArrayList();
@@ -637,12 +639,12 @@ public class HttpFormEntry {
 
             
         if (anyFiles) {
-            MultipartEntity entity = new MultipartEntity( HttpMultipartMode.BROWSER_COMPATIBLE );
+            Part[] parts = new Part[goodEntries.size()];
             for (int i = 0; i < goodEntries.size(); i++) {
                 HttpFormEntry formEntry =
                     (HttpFormEntry) goodEntries.get(i);
                 if (formEntry.type == TYPE_FILE) {
-                    entity.addPart(formEntry.getName(),formEntry.getFilePart());
+                    parts[i] = formEntry.getFilePart();
                 } else {
                     //Not sure why but we have seen a couple of times
                     //the byte value '0' gets into one of these strings
@@ -653,22 +655,22 @@ public class HttpFormEntry {
                     while (value.indexOf(0) >= 0) {
                         value = value.replace((char) 0, with);
                     }
-                   try {
-                       entity.addPart(formEntry.getName(),new StringBody( value));
-                   } catch (UnsupportedEncodingException uee) {throw new HttpWrapException(uee);}
+                    parts[i] = new StringPart(formEntry.getName(), value);
                 }
             }
-            client.setContent(entity);
+            postMethod.setRequestEntity(new MultipartRequestEntity(parts,
+                                                                   postMethod.getParams()));
         } else {
             for (int i = 0; i < goodEntries.size(); i++) {
                 HttpFormEntry formEntry =
                     (HttpFormEntry) goodEntries.get(i);
-                client.setParameter(
-                                                          formEntry.getName(), formEntry.getValue());
+                postMethod.addParameter(
+                                        new NameValuePair(
+                                                          formEntry.getName(), formEntry.getValue()));
             }
         }
 
-        return client;
+        return postMethod;
     }
 
 

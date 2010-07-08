@@ -411,7 +411,10 @@ public class StateManager extends IdvManager {
         propertyRbiFiles.addAll(0, getArgsManager().argRbiFiles);
 
 
-
+        //If there is no trustStore property defined then always trust self-signed certificates
+        if(System.getProperty("javax.net.ssl.trustStore")==null) {
+            ucar.unidata.util.NaiveTrustProvider.setAlwaysTrust(true);
+        } 
 
         //Have the resource manager load up the resources
         getResourceManager().init(propertyRbiFiles);
@@ -424,7 +427,6 @@ public class StateManager extends IdvManager {
         ucar.unidata.util.Msg.init(
             getResourceManager().getResources(
                 IdvResourceManager.RSC_MESSAGES));
-
 
 
 
