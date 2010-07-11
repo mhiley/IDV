@@ -213,12 +213,12 @@ argument -Dfoo=bar) -->
     </target>
 
 
-
     <target name="idvjar" depends="init">
         <antcall target="clean"/>
         <antcall target="jaridv"/>
-<copy file="C:\Users\dmh\IdeaProjects\idv\lib\idv.jar" tofile="c:/Users/dmh/idv/idv.jar"/>
-<copy file="C:\Users\dmh\IdeaProjects\idv\lib\ncIdv.jar" tofile="c:/Users/dmh/idv/ncIdv.jar"/>
+        <!-- <copy file="C:\Users\dmh\IdeaProjects\idv\lib\idv.jar" tofile="c:/Users/dmh/idv/idv.jar"/>
+             <copy file="C:\Users\dmh\IdeaProjects\idv\lib\ncIdv.jar" tofile="c:/Users/dmh/idv/ncIdv.jar"/>
+        -->
     </target>
 
 
