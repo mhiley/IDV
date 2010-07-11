@@ -151,7 +151,6 @@ argument -Dfoo=bar) -->
          <echo message="Test running test. Classpath=${classpath}" />
          <java classname="ucar.unidata.idv.test.RunTest"
                classpath="${classpath}"
-               memoryMaximumSize="256m"
                failonerror="true"
                fork="true"
                >
@@ -218,6 +217,8 @@ argument -Dfoo=bar) -->
     <target name="idvjar" depends="init">
         <antcall target="clean"/>
         <antcall target="jaridv"/>
+<copy file="C:\Users\dmh\IdeaProjects\idv\lib\idv.jar" tofile="c:/Users/dmh/idv/idv.jar"/>
+<copy file="C:\Users\dmh\IdeaProjects\idv\lib\ncIdv.jar" tofile="c:/Users/dmh/idv/ncIdv.jar"/>
     </target>
 
 

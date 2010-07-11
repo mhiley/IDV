@@ -23,25 +23,12 @@
 package ucar.unidata.util;
 
 
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScheme;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.auth.CredentialsNotAvailableException;
-import org.apache.commons.httpclient.auth.CredentialsProvider;
-import org.apache.commons.httpclient.auth.RFC2617Scheme;
 
-/*
+
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
-import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.auth.RFC2617Scheme;
-*/
-
-
 import ucar.unidata.util.GuiUtils;
 import ucar.unidata.util.Misc;
 import ucar.unidata.xml.XmlEncoder;
@@ -68,7 +55,7 @@ import javax.swing.*;
  * @author IDV Development Team
  * @version $Id: AccountManager.java,v 1.3 2007/05/09 21:59:26 dmurray Exp $
  */
-public class AccountManager implements CredentialsProvider,
+public class AccountManager implements org.apache.http.client.CredentialsProvider,
                                        IOUtil.UserAccountManager {
 
 
@@ -201,10 +188,6 @@ public class AccountManager implements CredentialsProvider,
                 "Authentication scope may not be null");
         }
 
-        if (currentCredentials == null) {
-            //jeffmc: skip for now            setCredentials(authscope, null);
-        }
-
         return currentCredentials;
     }
 
@@ -246,8 +229,9 @@ public class AccountManager implements CredentialsProvider,
         if (userInfo == null) {
             return null;
         }
-        return new UsernamePasswordCredentials(userInfo.getUserId(),
+        currentCredentials = new UsernamePasswordCredentials(userInfo.getUserId(),
                 userInfo.getPassword());
+        return currentCredentials;
     }
 
 
@@ -411,4 +395,8 @@ public class AccountManager implements CredentialsProvider,
     }
 
 
+     public Credentials getCredentials(AuthScope scope)
+     {
+         return currentCredentials;
+     }
 }

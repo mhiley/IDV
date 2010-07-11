@@ -21,11 +21,7 @@
 package ucar.unidata.data;
 
 
-
-//import org.apache.http.client.CredentialsProvider;
-//import opendap.dap.HttpWrap;
-
-
+import opendap.dap.HttpWrap;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -88,9 +84,6 @@ import java.util.TimeZone;
 
 import javax.swing.filechooser.FileFilter;
 
-
-
-
 /**
  * A class for managing {@link DataSource}s
  *
@@ -103,7 +96,7 @@ public class DataManager {
     static {
         try {
             visad.data.netcdf.StandardQuantityDB sqdb =
-                visad.data.netcdf.StandardQuantityDB.instance();
+                    visad.data.netcdf.StandardQuantityDB.instance();
         } catch (Exception e) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -111,96 +104,140 @@ public class DataManager {
         }
         try {
             String handlers =
-                System.getProperty("java.protocol.handler.pkgs");
+                    System.getProperty("java.protocol.handler.pkgs");
             String newProperty = null;
             if (handlers == null) {
                 newProperty = "com.sun.net.ssl.internal.www.protocol";
             } else if (handlers.indexOf(
                     "com.sun.net.ssl.internal.www.protocol") < 0) {
                 newProperty = "com.sun.net.ssl.internal.www.protocol | "
-                              + handlers;
+                        + handlers;
             }
             if (newProperty != null) {  // was set above
                 System.setProperty("java.protocol.handler.pkgs", newProperty);
                 java.security.Security.addProvider(
-                    new com.sun.net.ssl.internal.ssl.Provider());
+                        new com.sun.net.ssl.internal.ssl.Provider());
             }
         } catch (Exception e) {
             System.out.println(
-                "Unable to set System Property: java.protocol.handler.pkgs");
+                    "Unable to set System Property: java.protocol.handler.pkgs");
         }
     }
 
-    /** logging category */
+    /**
+     * logging category
+     */
     static ucar.unidata.util.LogUtil.LogCategory log_ =
-        ucar.unidata.util.LogUtil.getLogInstance(DataManager.class.getName());
+            ucar.unidata.util.LogUtil.getLogInstance(DataManager.class.getName());
 
-    /** The "unknown" data type */
+    /**
+     * The "unknown" data type
+     */
     public static final String DATATYPE_UNKNOWN = "unknown";
 
-    /** The known data type id */
+    /**
+     * The known data type id
+     */
     public static final String DATATYPE_ID = "datatypeid";
 
-    /** The show in tree property */
+    /**
+     * The show in tree property
+     */
     public static final String PROP_SHOW_IN_TREE = "show_in_tree";
 
-    /** _more_ */
+    /**
+     * _more_
+     */
     public static final String PROP_CACHE_PERCENT = "idv.data.cache.percent";
 
-    /** bbox property */
+    /**
+     * bbox property
+     */
     public static final String PROP_GEOSUBSET_BBOX =
-        "idv.data.geosubset.bbox";
+            "idv.data.geosubset.bbox";
 
-    /** preference id */
+    /**
+     * preference id
+     */
     public static final String PROP_NETCDF_CONVENTIONHANDLERS =
-        "idv.data.netcdf.conventionhandlers";
+            "idv.data.netcdf.conventionhandlers";
 
-    /** The default display property */
+    /**
+     * The default display property
+     */
     public static final String PROP_DEFAULT_DISPLAY = "default_display";
 
 
-    /** The XML tag for datasources */
+    /**
+     * The XML tag for datasources
+     */
     public static final String TAG_DATASOURCES = "datasources";
 
-    /** The XML tag for a datasource */
+    /**
+     * The XML tag for a datasource
+     */
     public static final String TAG_DATASOURCE = "datasource";
 
-    /** The XML tag for a property */
+    /**
+     * The XML tag for a property
+     */
     public static final String TAG_PROPERTY = "property";
 
-    /** The XML attribute for allowing multiple data choices */
+    /**
+     * The XML attribute for allowing multiple data choices
+     */
     public static final String ATTR_DOESMULTIPLES = "doesmultiples";
 
-    /** xml attribute identifier for the datasource.xml file */
+    /**
+     * xml attribute identifier for the datasource.xml file
+     */
     public static final String ATTR_STANDALONE = "standalone";
 
-    /** xml attribute identifier for the datasource.xml file */
+    /**
+     * xml attribute identifier for the datasource.xml file
+     */
     public static final String ATTR_NCMLTEMPLATE = "ncmltemplate";
 
-    /** The XML "id" attribute */
+    /**
+     * The XML "id" attribute
+     */
     public static final String ATTR_ID = "id";
 
-    /** The XML factory attribute */
+    /**
+     * The XML factory attribute
+     */
     public static final String ATTR_FACTORY = "factory";
 
-    /** The XML label attribute */
+    /**
+     * The XML label attribute
+     */
     public static final String ATTR_LABEL = "label";
 
-    /** The XML name attribute */
+    /**
+     * The XML name attribute
+     */
     public static final String ATTR_NAME = "name";
 
-    /** The XML patterns attribute */
+    /**
+     * The XML patterns attribute
+     */
     public static final String ATTR_PATTERNS = "patterns";
 
-    /** The XML file selection attribute */
+    /**
+     * The XML file selection attribute
+     */
     public static final String ATTR_FILESELECTION = "fileselection";
 
-    /** The XML value attribute */
+    /**
+     * The XML value attribute
+     */
     public static final String ATTR_VALUE = "value";
 
-    /** Preference for where to save the grib index */
+    /**
+     * Preference for where to save the grib index
+     */
     public static final String PREF_GRIBINDEXINCACHE =
-        "idv.data.gribindexincache";
+            "idv.data.gribindexincache";
 
     /**
      * The {@link DataContext} provides some services for this
@@ -231,9 +268,11 @@ public class DataManager {
      */
     protected ArrayList descriptors = new ArrayList();
 
-    /** List of the data source descriptors that can be stand alone */
+    /**
+     * List of the data source descriptors that can be stand alone
+     */
     private List<DataSourceDescriptor> standaloneDescriptors =
-        new ArrayList<DataSourceDescriptor>();
+            new ArrayList<DataSourceDescriptor>();
 
     /**
      * A mapping from datasource_id (String) to {@link DataSourceDescriptor}
@@ -277,16 +316,18 @@ public class DataManager {
      */
     protected ArrayList allDataSourceIds = new ArrayList();
 
-    /** Maps data source names */
+    /**
+     * Maps data source names
+     */
     protected Hashtable dataSourceNameMap = new Hashtable();
 
 
     /**
      * Create a new DataManager with the given {@link DataContext}.
      *
-     * @param dataContext      The {@link DataContext} that this DataManager
-     *                         exists within (this is usually an instance of
-     *                         {@link  ucar.unidata.idv.IntegratedDataViewer}).
+     * @param dataContext The {@link DataContext} that this DataManager
+     *                    exists within (this is usually an instance of
+     *                    {@link  ucar.unidata.idv.IntegratedDataViewer}).
      */
     public DataManager(DataContext dataContext) {
         this.dataContext = dataContext;
@@ -302,8 +343,8 @@ public class DataManager {
      */
     public String getDataCacheDirectory() {
         String dataCacheDir =
-            IOUtil.joinDir(
-                dataContext.getObjectStore().getUserTmpDirectory(), "cache/");
+                IOUtil.joinDir(
+                        dataContext.getObjectStore().getUserTmpDirectory(), "cache/");
         IOUtil.makeDir(dataCacheDir);
         return dataCacheDir;
     }
@@ -311,95 +352,97 @@ public class DataManager {
     /**
      * Initialize the resources
      *
-     * @param resourceManager  resource manager
+     * @param resourceManager resource manager
      */
     public void initResources(IdvResourceManager resourceManager) {
 
         loadDataSourceXml(
-            resourceManager.getXmlResources(
-                IdvResourceManager.RSC_DATASOURCE));
+                resourceManager.getXmlResources(
+                        IdvResourceManager.RSC_DATASOURCE));
 
         loadIospResources(resourceManager);
         String[] visadProperties = {
-            "visad.java3d.imageByRef", "visad.java3d.geometryByRef",
-            "visad.actionimpl.tracetime", "visad.actionimpl.tracestack",
-            "visad.cachingcoordinatesystem.debugtime",
-            "visad.java3d.textureNpot", "visad.data.arraycache.enabled",
-            "visad.data.arraycache.lowerthreshold",
-            "visad.data.arraycache.upperthreshold",
-            "visad.data.arraycache.usedatacachemanager",
-            "visad.contourFillSingleValueAsTexture"
+                "visad.java3d.imageByRef", "visad.java3d.geometryByRef",
+                "visad.actionimpl.tracetime", "visad.actionimpl.tracestack",
+                "visad.cachingcoordinatesystem.debugtime",
+                "visad.java3d.textureNpot", "visad.data.arraycache.enabled",
+                "visad.data.arraycache.lowerthreshold",
+                "visad.data.arraycache.upperthreshold",
+                "visad.data.arraycache.usedatacachemanager",
+                "visad.contourFillSingleValueAsTexture"
         };
 
 
         for (String visadProp : visadProperties) {
             System.setProperty(visadProp,
-                               dataContext.getIdv().getProperty(visadProp,
-                                   "false"));
+                    dataContext.getIdv().getProperty(visadProp,
+                            "false"));
         }
 
         SampledSet.setCacheSizeThreshold(
-            dataContext.getIdv().getProperty(
-                "visad.sampledset.cachesizethreshold", 10000));
+                dataContext.getIdv().getProperty(
+                        "visad.sampledset.cachesizethreshold", 10000));
 
 
         //The IDV can run normally (i.e., the usual interactive IDV) and also in server mode (e.g., within RAMADDA)
         //If in server mode then its expected that the server has done this configuration
         //If we aren't in server mode  then we configure things here
-        if ( !dataContext.getIdv().getServerMode()) {
+        if (!dataContext.getIdv().getServerMode()) {
             //Initialize the nc file cache
             //Don't do this for now
             //            NetcdfDataset.initNetcdfFileCache(1, 15, -1);
 
             //Set the temp file and the cache policy
             String nj22TmpFile =
-                IOUtil.joinDir(
-                    dataContext.getObjectStore().getUserTmpDirectory(),
-                    "nj22/");
+                    IOUtil.joinDir(
+                            dataContext.getObjectStore().getUserTmpDirectory(),
+                            "nj22/");
             IOUtil.makeDir(nj22TmpFile);
             ucar.nc2.util.DiskCache.setRootDirectory(nj22TmpFile);
             ucar.nc2.util.DiskCache.setCachePolicy(true);
             // have to do this since nj2.2.20
             ucar.nc2.iosp.grib.GribServiceProvider
-                .setIndexAlwaysInCache(dataContext.getIdv().getStateManager()
-                    .getPreferenceOrProperty(PREF_GRIBINDEXINCACHE, true));
+                    .setIndexAlwaysInCache(dataContext.getIdv().getStateManager()
+                            .getPreferenceOrProperty(PREF_GRIBINDEXINCACHE, true));
             ucar.nc2.iosp.grid.GridServiceProvider
-                .setIndexAlwaysInCache(dataContext.getIdv().getStateManager()
-                    .getPreferenceOrProperty(PREF_GRIBINDEXINCACHE, true));
+                    .setIndexAlwaysInCache(dataContext.getIdv().getStateManager()
+                            .getPreferenceOrProperty(PREF_GRIBINDEXINCACHE, true));
 
 
             visad.data.DataCacheManager.getCacheManager().setCacheDir(
-                new File(getDataCacheDirectory()));
+                    new File(getDataCacheDirectory()));
             visad.data.DataCacheManager.getCacheManager()
-                .setMemoryPercent(dataContext.getIdv().getStateManager()
-                    .getPreferenceOrProperty(PROP_CACHE_PERCENT, 0.25));
+                    .setMemoryPercent(dataContext.getIdv().getStateManager()
+                            .getPreferenceOrProperty(PROP_CACHE_PERCENT, 0.25));
 
-            /*
+
             AccountManager accountManager =
-                AccountManager.getGlobalAccountManager();
+                    AccountManager.getGlobalAccountManager();
             if (accountManager == null) {
                 accountManager = new AccountManager(
-                    dataContext.getIdv().getStore().getUserDirectory());
+                        dataContext.getIdv().getStore().getUserDirectory());
                 AccountManager.setGlobalAccountManager(accountManager);
             }
-            CredentialsProvider provider = accountManager;
+
+                org.apache.http.client.CredentialsProvider provider = accountManager;
             try {
-                HttpWrap client = new HttpWrap();
-                client.setGlobalCredentialsProvider(provider);
+                HttpWrap.setGlobalCredentialsProvider(provider);
+                //HttpWrap client = new HttpWrap();
+                //client.setGlobalCredentialsProvider(provider);
                 // fix opendap.dap.DConnect2.setHttpClient(client);
-                ucar.unidata.io.http.HTTPRandomAccessFile.setHttpClient(
-                    client);
+                // fix ucar.unidata.io.http.HTTPRandomAccessFile.setHttpClient(client);
             } catch (Exception exc) {
                 LogUtil.printException(log_, "Cannot create http client",
-                                       exc);
+                        exc);
             }
-            */
+
+
         }
 
 
         String defaultBoundingBoxString =
-            dataContext.getIdv().getProperty(PROP_GEOSUBSET_BBOX,
-                                             (String) null);
+                dataContext.getIdv().getProperty(PROP_GEOSUBSET_BBOX,
+                        (String) null);
 
         TextAdapter.addDateParser(new TextAdapter.DateParser() {
             public DateTime createDateTime(String value, String format,
@@ -408,24 +451,24 @@ public class DataManager {
                 if (format.endsWith("dh1") || format.endsWith("dh2")
                         || format.endsWith("dh3") || format.endsWith("dh4")) {
                     int len = new Integer(format.substring(format.length()
-                                  - 1)).intValue();
+                            - 1)).intValue();
                     value = value.trim();
                     int idx = value.lastIndexOf(" ");
                     if (idx < 0) {
                         idx = 0;
                     }
-                    String dh    = value.substring(idx + 1);
-                    int    ptIdx = dh.length() - len;
+                    String dh = value.substring(idx + 1);
+                    int ptIdx = dh.length() - len;
                     dh = dh.substring(0, ptIdx) + "." + dh.substring(ptIdx);
                     while ((dh.length() > 1) && dh.startsWith("0")) {
                         dh = dh.substring(1);
                     }
                     double hours = new Double(dh);
-                    String HH    = "" + (int) hours;
-                    String mm    = "" + (int) (60 * (hours - (int) hours));
+                    String HH = "" + (int) hours;
+                    String mm = "" + (int) (60 * (hours - (int) hours));
                     format = format.replace("dh" + len, "HH:mm");
                     String newValue = value.trim().substring(0, idx + 1) + HH
-                                      + ":" + mm;
+                            + ":" + mm;
                     return visad.DateTime.createDateTime(newValue, format,
                             timezone);
                 }
@@ -437,56 +480,55 @@ public class DataManager {
 
         if (defaultBoundingBoxString != null) {
             List toks = StringUtil.split(defaultBoundingBoxString, ",", true,
-                                         true);
+                    true);
             if (toks.size() != 4) {
                 System.err.println("Bad idv.geosubset property:"
-                                   + defaultBoundingBoxString);
+                        + defaultBoundingBoxString);
             } else {
                 GeoSelection.setDefaultBoundingBox(
-                    new GeoLocationInfo(
-                        Misc.decodeLatLon((String) toks.get(0)),
-                        Misc.decodeLatLon((String) toks.get(1)),
-                        Misc.decodeLatLon((String) toks.get(2)),
-                        Misc.decodeLatLon((String) toks.get(3))));
+                        new GeoLocationInfo(
+                                Misc.decodeLatLon((String) toks.get(0)),
+                                Misc.decodeLatLon((String) toks.get(1)),
+                                Misc.decodeLatLon((String) toks.get(2)),
+                                Misc.decodeLatLon((String) toks.get(3))));
             }
         }
 
         String conventionHandlers =
-            dataContext.getIdv().getProperty(PROP_NETCDF_CONVENTIONHANDLERS,
-                                             (String) null);
+                dataContext.getIdv().getProperty(PROP_NETCDF_CONVENTIONHANDLERS,
+                        (String) null);
         if (conventionHandlers != null) {
             List tokens = StringUtil.split(conventionHandlers, ",", true,
-                                           true);
+                    true);
             for (int i = 0; i < tokens.size(); i++) {
-                String token     = (String) tokens.get(i);
-                List   subTokens = StringUtil.split(token, ":", true, true);
+                String token = (String) tokens.get(i);
+                List subTokens = StringUtil.split(token, ":", true, true);
                 if (subTokens.size() < 2) {
                     System.err.println("Bad convention handler token:"
-                                       + token);
+                            + token);
                     continue;
                 }
 
                 String className = subTokens.get(0).toString().trim();
                 try {
-                    Class  handlerClass   = Misc.findClass(className);
+                    Class handlerClass = Misc.findClass(className);
                     String conventionName =
-                        subTokens.get(1).toString().trim();
+                            subTokens.get(1).toString().trim();
                     log_.debug("Loading convention handler: "
-                               + handlerClass.getName() + " for convention:"
-                               + conventionName);
+                            + handlerClass.getName() + " for convention:"
+                            + conventionName);
                     ucar.nc2.dataset.CoordSysBuilder.registerConvention(
-                        conventionName, handlerClass);
+                            conventionName, handlerClass);
                 } catch (ClassNotFoundException cnfe) {
                     LogUtil.printException(log_,
-                                           "Could not load convention class:"
-                                           + className, cnfe);
+                            "Could not load convention class:"
+                                    + className, cnfe);
                 } catch (Exception exc) {
                     LogUtil.printException(log_, "Registering conventions",
-                                           exc);
+                            exc);
                 }
             }
         }
-
 
 
     }
@@ -504,7 +546,7 @@ public class DataManager {
      * Load the grib lookup tables
      *
      * @param resourceManager The resource manager
-     * @deprecated  use loadIOSPResources(IdvResourceManager) instead
+     * @deprecated use loadIOSPResources(IdvResourceManager) instead
      */
     protected void loadGribResources(IdvResourceManager resourceManager) {
         loadIospResources(resourceManager);
@@ -517,45 +559,45 @@ public class DataManager {
      */
     protected void loadIospResources(IdvResourceManager resourceManager) {
         ucar.grib.GribResourceReader.setGribResourceReader(
-            new ucar.grib.GribResourceReader() {
-            public InputStream openInputStream(String resourceName)
-                    throws IOException {
-                try {
-                    InputStream inputStream =
-                        IOUtil.getInputStream(resourceName);
-                    return inputStream;
-                } catch (IOException ioe) {
-                    //System.err.println ("IDV failed to read:" + resourceName);
-                    return null;
-                }
-            }
+                new ucar.grib.GribResourceReader() {
+                    public InputStream openInputStream(String resourceName)
+                            throws IOException {
+                        try {
+                            InputStream inputStream =
+                                    IOUtil.getInputStream(resourceName);
+                            return inputStream;
+                        } catch (IOException ioe) {
+                            //System.err.println ("IDV failed to read:" + resourceName);
+                            return null;
+                        }
+                    }
 
-        });
+                });
 
         ResourceCollection grib1Resources =
-            resourceManager.getResources(
-                IdvResourceManager.RSC_GRIB1LOOKUPTABLES);
+                resourceManager.getResources(
+                        IdvResourceManager.RSC_GRIB1LOOKUPTABLES);
         for (int i = 0; i < grib1Resources.size(); i++) {
             try {
                 ucar.grib.grib1.GribPDSParamTable.addParameterUserLookup(
-                    grib1Resources.get(i).toString());
+                        grib1Resources.get(i).toString());
             } catch (Exception exc) {
                 //                System.err.println ("bad:"+ exc);
             }
         }
         ResourceCollection grib2Resources =
-            resourceManager.getResources(
-                IdvResourceManager.RSC_GRIB2LOOKUPTABLES);
+                resourceManager.getResources(
+                        IdvResourceManager.RSC_GRIB2LOOKUPTABLES);
         for (int i = 0; i < grib2Resources.size(); i++) {
             try {
                 ucar.grib.grib2.ParameterTable.addParametersUser(
-                    grib2Resources.get(i).toString());
+                        grib2Resources.get(i).toString());
             } catch (Exception exc) {
                 //                System.err.println ("bad:"+ exc);
             }
         }
         ResourceCollection njResources =
-            resourceManager.getResources(IdvResourceManager.RSC_NJCONFIG);
+                resourceManager.getResources(IdvResourceManager.RSC_NJCONFIG);
         StringBuilder errlog = new StringBuilder();
         for (int i = 0; i < njResources.size(); i++) {
             try {
@@ -570,13 +612,13 @@ public class DataManager {
             }
         }
         ResourceCollection gempakParameters =
-            resourceManager.getResources(
-                IdvResourceManager.RSC_GEMPAKGRIDPARAMTABLES);
+                resourceManager.getResources(
+                        IdvResourceManager.RSC_GEMPAKGRIDPARAMTABLES);
         for (int i = 0; i < gempakParameters.size(); i++) {
             try {
                 String r = gempakParameters.get(i).toString();
                 ucar.nc2.iosp.gempak.GempakGridParameterTable.addParameters(
-                    r);
+                        r);
             } catch (Exception exc) {
                 //                System.err.println ("bad:"+ exc);
             }
@@ -590,10 +632,10 @@ public class DataManager {
      */
     private void initCache() {
         File cacheDir =
-            new File(
-                IOUtil.joinDir(
-                    dataContext.getObjectStore().getUserDirectory(),
-                    "datacache"));
+                new File(
+                        IOUtil.joinDir(
+                                dataContext.getObjectStore().getUserDirectory(),
+                                "datacache"));
         IOUtil.makeDir(cacheDir);
         CacheManager.setCacheDir(cacheDir);
     }
@@ -611,9 +653,9 @@ public class DataManager {
      * Process the list of xml documents that define the different
      * {@link DataSource}s used within the idv.
      *
-     * @param resources    The {@link ucar.unidata.xml.XmlResourceCollection}
-     *                     that holds the set of datasource xml documents.
-     *                     This may be null.
+     * @param resources The {@link ucar.unidata.xml.XmlResourceCollection}
+     *                  that holds the set of datasource xml documents.
+     *                  This may be null.
      */
     public void loadDataSourceXml(XmlResourceCollection resources) {
         if (resources == null) {
@@ -635,7 +677,7 @@ public class DataManager {
                 processDataSourceXml(root);
             } else {
                 LogUtil.printMessage("Unknown tag name in datasources.xml:"
-                                     + tag);
+                        + tag);
             }
         }
     }
@@ -656,7 +698,7 @@ public class DataManager {
                     html.append(dataSource.getFullDescription());
                 } catch (Exception exc) {
                     html.append("Error getting datasource html:"
-                                + dataSource.getName());
+                            + dataSource.getName());
                 }
             }
             html.append("\n<hr>");
@@ -669,13 +711,11 @@ public class DataManager {
     /**
      * Create a snippet of the datasource xml for the given data source
      *
-     * @param type The data source type
-     * @param label the label
+     * @param type            The data source type
+     * @param label           the label
      * @param datasourceClass the class
-     * @param properties properties
-     *
+     * @param properties      properties
      * @return The xml
-     *
      * @throws Exception On badness
      */
     public static String getDatasourceXml(String type, String label,
@@ -683,21 +723,19 @@ public class DataManager {
                                           Hashtable properties)
             throws Exception {
         return getDatasourceXml(type, label, datasourceClass, properties,
-                                null);
+                null);
     }
 
 
     /**
      * Create a snippet of the datasource xml for the given data source
      *
-     * @param type The data source type
-     * @param label the label
+     * @param type            The data source type
+     * @param label           the label
      * @param datasourceClass the class
-     * @param properties properties
-     * @param attributes If non-null then add these are xml attributes
-     *
+     * @param properties      properties
+     * @param attributes      If non-null then add these are xml attributes
      * @return The xml
-     *
      * @throws Exception On badness
      */
     public static String getDatasourceXml(String type, String label,
@@ -705,27 +743,27 @@ public class DataManager {
                                           Hashtable properties,
                                           String[] attributes)
             throws Exception {
-        Document doc  = XmlUtil.makeDocument();
-        Element  root = doc.createElement(TAG_DATASOURCES);
-        Element  node = XmlUtil.create(TAG_DATASOURCE, root);
+        Document doc = XmlUtil.makeDocument();
+        Element root = doc.createElement(TAG_DATASOURCES);
+        Element node = XmlUtil.create(TAG_DATASOURCE, root);
         node.setAttribute(ATTR_ID, type);
         node.setAttribute(ATTR_LABEL, label);
         node.setAttribute(ATTR_FACTORY, datasourceClass.getName());
         node.setAttribute(ATTR_FILESELECTION, "true");
         if (properties != null) {
             for (java.util.Enumeration keys = properties.keys();
-                    keys.hasMoreElements(); ) {
-                String key   = (String) keys.nextElement();
+                 keys.hasMoreElements();) {
+                String key = (String) keys.nextElement();
                 String value = (String) properties.get(key);
                 Element propNode = XmlUtil.create(doc, TAG_PROPERTY, node,
-                                       value, new String[] { ATTR_NAME,
-                        key });
+                        value, new String[]{ATTR_NAME,
+                                key});
             }
         }
         if (attributes != null) {
             for (int i = 0; i < attributes.length; i += 2) {
                 node.setAttribute(attributes[i],
-                                  XmlUtil.encodeString(attributes[i + 1]));
+                        XmlUtil.encodeString(attributes[i + 1]));
             }
         }
         /*
@@ -743,21 +781,19 @@ public class DataManager {
     }
 
 
-
-
     /**
      * This method processes the given datasourceNode, creating a
      * {@link  DataSourceDescriptor} if one has not been created already.
      *
-     * @param datasourceNode    the element for a data source
+     * @param datasourceNode the element for a data source
      */
     private void processDataSourceXml(Element datasourceNode) {
 
         try {
-            String ids    = XmlUtil.getAttribute(datasourceNode, ATTR_ID);
-            List   idList = StringUtil.split(ids);
-            int    count  = 0;
-            for (Iterator iter = idList.iterator(); iter.hasNext(); ) {
+            String ids = XmlUtil.getAttribute(datasourceNode, ATTR_ID);
+            List idList = StringUtil.split(ids);
+            int count = 0;
+            for (Iterator iter = idList.iterator(); iter.hasNext();) {
                 count++;
                 String id = ((String) iter.next()).toLowerCase();
                 //We have already seen this datasource id
@@ -766,19 +802,19 @@ public class DataManager {
                 }
 
                 String factory = XmlUtil.getAttribute(datasourceNode,
-                                     ATTR_FACTORY);
+                        ATTR_FACTORY);
                 String patterns = XmlUtil.getAttribute(datasourceNode,
-                                      ATTR_PATTERNS, (String) null);
+                        ATTR_PATTERNS, (String) null);
                 String label = XmlUtil.getAttribute(datasourceNode,
-                                   ATTR_LABEL, "");
+                        ATTR_LABEL, "");
                 //                System.out.println ("<tr><td>"+id + "</td><td>" + label+"</td></tr>");
                 boolean fileSelection = XmlUtil.getAttribute(datasourceNode,
-                                            ATTR_FILESELECTION, false);
+                        ATTR_FILESELECTION, false);
                 if (count > 1) {
                     fileSelection = false;
                 }
                 boolean doesMultiples = XmlUtil.getAttribute(datasourceNode,
-                                            ATTR_DOESMULTIPLES, false);
+                        ATTR_DOESMULTIPLES, false);
                 if ((label != null) && (label.length() > 0)) {
                     if (dataSourceNameMap.get(label) == null) {
                         dataSourceNameMap.put(label, label);
@@ -818,14 +854,14 @@ public class DataManager {
 
                 Hashtable properties = new Hashtable();
                 NodeList props = XmlUtil.getElements(datasourceNode,
-                                     TAG_PROPERTY);
+                        TAG_PROPERTY);
                 for (int propIdx = 0; propIdx < props.getLength();
-                        propIdx++) {
+                     propIdx++) {
                     Element propNode = (Element) props.item(propIdx);
                     if (XmlUtil.hasAttribute(propNode, ATTR_VALUE)) {
                         properties.put(XmlUtil.getAttribute(propNode,
                                 ATTR_NAME), XmlUtil.getAttribute(propNode,
-                                    ATTR_VALUE));
+                                ATTR_VALUE));
                     } else {
                         String value = XmlUtil.getChildText(propNode);
                         properties.put(XmlUtil.getAttribute(propNode,
@@ -833,10 +869,10 @@ public class DataManager {
                     }
                 }
                 DataSourceDescriptor descriptor =
-                    new DataSourceDescriptor(id, label, this,
-                                             Misc.findClass(factory),
-                                             patterns, fileSelection,
-                                             doesMultiples, properties);
+                        new DataSourceDescriptor(id, label, this,
+                                Misc.findClass(factory),
+                                patterns, fileSelection,
+                                doesMultiples, properties);
                 descriptor.setStandalone(XmlUtil.getAttribute(datasourceNode,
                         ATTR_STANDALONE, false));
                 if (descriptor.getStandalone()) {
@@ -844,8 +880,8 @@ public class DataManager {
                 }
                 if (XmlUtil.hasAttribute(datasourceNode, ATTR_NCMLTEMPLATE)) {
                     descriptor.setNcmlTemplate(
-                        XmlUtil.getAttribute(
-                            datasourceNode, ATTR_NCMLTEMPLATE));
+                            XmlUtil.getAttribute(
+                                    datasourceNode, ATTR_NCMLTEMPLATE));
                 }
                 descriptors.add(descriptor);
                 idToDescriptor.put(id, descriptor);
@@ -874,7 +910,6 @@ public class DataManager {
     public List<DataSourceDescriptor> getStandaloneDescriptors() {
         return standaloneDescriptors;
     }
-
 
 
     /**
@@ -908,13 +943,11 @@ public class DataManager {
     }
 
 
-
     /**
      * Is the given {@link  DataSource} currently in the list of active
      * datasources.
      *
      * @param dataSource The {@link  DataSource} to check.
-     *
      * @return Is dataSource in the datasources list.
      */
     public boolean haveDataSource(DataSource dataSource) {
@@ -925,14 +958,14 @@ public class DataManager {
      * Add the given {@link  DataSource} into the list of datasources if it
      * is not in the list and if it is not in error.
      *
-     * @param dataSource  The {@link  DataSource} to add into the list.
+     * @param dataSource The {@link  DataSource} to add into the list.
      * @return True if we added this data source, false if we already have this data source
      */
     public boolean addDataSource(DataSource dataSource) {
-        if ( !haveDataSource(dataSource) && !dataSource.getInError()) {
+        if (!haveDataSource(dataSource) && !dataSource.getInError()) {
             //Add it to the list here because the dataContext might ask us for the list
             dataSources.add(dataSource);
-            if ( !dataContext.loadDataSource(dataSource)) {
+            if (!dataContext.loadDataSource(dataSource)) {
                 removeDataSource(dataSource);
                 return false;
             }
@@ -963,7 +996,7 @@ public class DataManager {
         for (int i = 0; i < tmp.size(); i++) {
             removeDataSource((DataSource) tmp.get(i));
         }
-        dataSources                = new ArrayList();
+        dataSources = new ArrayList();
         dataSourceToDefiningObject = new Hashtable();
         definingObjectToDataSource = new Hashtable();
     }
@@ -972,7 +1005,7 @@ public class DataManager {
     /**
      * Remove the given {@link  DataSource} from the list of datasources.
      *
-     * @param dataSource  The {@link  DataSource} to remove.
+     * @param dataSource The {@link  DataSource} to remove.
      */
     public void removeDataSource(DataSource dataSource) {
         dataSources.remove(dataSource);
@@ -997,27 +1030,32 @@ public class DataManager {
     }
 
 
-
     /**
      * Class DataType - internal class for holding a DataType
      */
     private class DataType {
 
-        /** ID for the DataType */
+        /**
+         * ID for the DataType
+         */
         String dataTypeId;
 
-        /** The defining object for this type */
+        /**
+         * The defining object for this type
+         */
         Object definingObject;
 
-        /** The properties to use for this data */
+        /**
+         * The properties to use for this data
+         */
         Hashtable properties;
 
 
         /**
          * Create a new DataType
          *
-         * @param dataTypeId          data type id
-         * @param definingObject      defining object
+         * @param dataTypeId     data type id
+         * @param definingObject defining object
          */
         public DataType(String dataTypeId, Object definingObject) {
             this(dataTypeId, definingObject, null);
@@ -1026,21 +1064,21 @@ public class DataManager {
         /**
          * Create a new DataType
          *
-         * @param dataTypeId          data type id
-         * @param definingObject      defining object
-         * @param properties The properties
+         * @param dataTypeId     data type id
+         * @param definingObject defining object
+         * @param properties     The properties
          */
         public DataType(String dataTypeId, Object definingObject,
                         Hashtable properties) {
-            this.dataTypeId     = dataTypeId;
+            this.dataTypeId = dataTypeId;
             this.definingObject = definingObject;
-            this.properties     = properties;
+            this.properties = properties;
         }
 
         /**
          * Check if there is an error with this type
          *
-         * @return  true if in error
+         * @return true if in error
          */
         public boolean isInError() {
             return (dataTypeId == null);
@@ -1049,7 +1087,7 @@ public class DataManager {
         /**
          * to string
          *
-         * @return  to string
+         * @return to string
          */
         public String toString() {
             return "data type: " + dataTypeId;
@@ -1063,7 +1101,6 @@ public class DataManager {
      * are unpersisted so they can get an updated descriptor
      *
      * @param dds Given
-     *
      * @return Current
      */
     public DataSourceDescriptor getCurrent(DataSourceDescriptor dds) {
@@ -1072,7 +1109,7 @@ public class DataManager {
         }
         for (int i = 0; i < descriptors.size(); i++) {
             DataSourceDescriptor descriptor =
-                (DataSourceDescriptor) descriptors.get(i);
+                    (DataSourceDescriptor) descriptors.get(i);
             if (descriptor.equals(dds)) {
                 return descriptor;
             }
@@ -1085,16 +1122,16 @@ public class DataManager {
      * Check to see if this list of defining objects can handle
      * multiple objects
      *
-     * @param definingObjects    defining objects
-     * @param result             resulting list
-     * @param filters            filters
-     * @param properties the properties
+     * @param definingObjects defining objects
+     * @param result          resulting list
+     * @param filters         filters
+     * @param properties      the properties
      */
     private void checkMultiples(List definingObjects, List result,
                                 List filters, Hashtable properties) {
 
         //Now make sure the list contains strings
-        if ( !Misc.allStrings(definingObjects)) {
+        if (!Misc.allStrings(definingObjects)) {
             return;
         }
         boolean didone = true;
@@ -1102,8 +1139,8 @@ public class DataManager {
             didone = false;
             for (int i = 0; i < descriptors.size(); i++) {
                 DataSourceDescriptor descriptor =
-                    (DataSourceDescriptor) descriptors.get(i);
-                if ( !descriptor.getDoesMultiples()) {
+                        (DataSourceDescriptor) descriptors.get(i);
+                if (!descriptor.getDoesMultiples()) {
                     continue;
                 }
                 PatternFileFilter filter = descriptor.getPatternFileFilter();
@@ -1111,11 +1148,11 @@ public class DataManager {
                     continue;
                 }
                 List workingList = null;
-                List tmpList     = new ArrayList(definingObjects);
+                List tmpList = new ArrayList(definingObjects);
 
                 for (int stringIdx = 0; stringIdx < tmpList.size();
-                        stringIdx++) {
-                    String  s     = (String) tmpList.get(stringIdx);
+                     stringIdx++) {
+                    String s = (String) tmpList.get(stringIdx);
                     boolean match = filter.match(s);
                     if (match) {
                         //                        System.err.println("match:" + descriptor);
@@ -1130,24 +1167,24 @@ public class DataManager {
                     Hashtable props = null;
                     if (properties != null) {
                         props = (Hashtable) properties.get(
-                            DataSource.PROP_SUBPROPERTIES + result.size());
+                                DataSource.PROP_SUBPROPERTIES + result.size());
                     }
                     result.add(new DataType(descriptor.getId(), workingList,
-                                            props));
+                            props));
                     didone = true;
                 }
             }
         }
 
         for (int stringIdx = 0; stringIdx < definingObjects.size();
-                stringIdx++) {
-            String s        = (String) definingObjects.get(stringIdx);
+             stringIdx++) {
+            String s = (String) definingObjects.get(stringIdx);
             String dataType = findDataType(s, filters);
             if (dataType != null) {
                 Hashtable props = null;
                 if (properties != null) {
                     props = (Hashtable) properties.get(
-                        DataSource.PROP_SUBPROPERTIES + result.size());
+                            DataSource.PROP_SUBPROPERTIES + result.size());
                 }
                 result.add(new DataType(dataType, s, props));
             } else {
@@ -1158,16 +1195,15 @@ public class DataManager {
     }
 
 
-
     /**
      * Look up the named data source type based on the suffix of the data
      * location.
      *
-     * @param definingObject     the defining object for the Type
-     * @param filters            list of filters
+     * @param definingObject  the defining object for the Type
+     * @param filters         list of filters
      * @param returnErrorType If not true return null. Else return an empty datatype
-     * @param properties the properties
-     * @return   List of DataTypes
+     * @param properties      the properties
+     * @return List of DataTypes
      */
     private List getDataTypes(Object definingObject, List filters,
                               boolean returnErrorType, Hashtable properties) {
@@ -1176,7 +1212,7 @@ public class DataManager {
         if ((definingObject instanceof List)
                 && ((List) definingObject).size() > 0) {
             checkMultiples((List) definingObject, result, filters,
-                           properties);
+                    properties);
         }
 
         if (definingObject instanceof String) {
@@ -1184,7 +1220,7 @@ public class DataManager {
             if (dataType != null) {
                 result.add(new DataType(dataType, definingObject));
             } else {
-                if ( !returnErrorType) {
+                if (!returnErrorType) {
                     return null;
                 }
                 //In error
@@ -1198,21 +1234,21 @@ public class DataManager {
     /**
      * Find the data type.
      *
-     * @param definingObject    defining object for the type
-     * @param filters           List of filters
-     * @return  the type or null
+     * @param definingObject defining object for the type
+     * @param filters        List of filters
+     * @return the type or null
      */
     private String findDataType(String definingObject, List filters) {
-        String file            = definingObject.trim().toLowerCase();
-        int    questionMarkIdx = file.indexOf("?");
-        String substring       = null;
+        String file = definingObject.trim().toLowerCase();
+        int questionMarkIdx = file.indexOf("?");
+        String substring = null;
         if (questionMarkIdx >= 0) {
             substring = file.substring(0, questionMarkIdx);
         }
         for (int i = 0; i < filters.size(); i++) {
             PatternFileFilter filter = (PatternFileFilter) filters.get(i);
-            boolean           match  = filter.match(file);
-            if ( !match && (substring != null)) {
+            boolean match = filter.match(file);
+            if (!match && (substring != null)) {
                 match = filter.match(substring);
             }
             if (match) {
@@ -1231,8 +1267,8 @@ public class DataManager {
      * Is there a mapping defined from the given definingObject
      * (which should be a String) to a {@link  DataSourceDescriptor}.
      *
-     * @param definingObject          This is the object passed in when we
-     *                                try to create a {@link  DataSource}.
+     * @param definingObject This is the object passed in when we
+     *                       try to create a {@link  DataSource}.
      * @return Do we know how to handle the given definingObject.
      */
     public boolean validDatasourceId(Object definingObject) {
@@ -1249,9 +1285,9 @@ public class DataManager {
      * should be a String) to a {@link  DataSourceDescriptor} or is there a
      * DATATYPE_ID entry in the given properties Hashtable.
      *
-     * @param definingObject     This is the object passed in when we try to
-     *                           create a {@link  DataSource}.
-     * @param properties         May hold a DATATYPE_ID entry.
+     * @param definingObject This is the object passed in when we try to
+     *                       create a {@link  DataSource}.
+     * @param properties     May hold a DATATYPE_ID entry.
      * @return Do we know how to handle the given definingObject.
      */
     public boolean validDatasourceId(Object definingObject,
@@ -1268,15 +1304,14 @@ public class DataManager {
      * given definingObject.
      *
      * @param definingObject The object used to create a DataSource.
-     * @param lookupKey What we use to lookup the data source in the
-     * definingObjectToDataSource map.
-     *
+     * @param lookupKey      What we use to lookup the data source in the
+     *                       definingObjectToDataSource map.
      * @return The DataSource created by the definingObject or null.
      */
     private DataSource findDataSource(Object definingObject,
                                       Object lookupKey) {
         DataSource dataSource =
-            (DataSource) definingObjectToDataSource.get(lookupKey);
+                (DataSource) definingObjectToDataSource.get(lookupKey);
         if (dataSource != null) {
             return dataSource;
         }
@@ -1290,12 +1325,10 @@ public class DataManager {
     }
 
 
-
     /**
      * Find the data source with the given name
      *
      * @param name The name. This is passed to DataSource.identifiedBy() method. It can be 'class:some_class' or a regexp pattern that matches on the data source name
-     *
      * @return the data source or null if none found
      */
     public DataSource findDataSource(String name) {
@@ -1327,15 +1360,13 @@ public class DataManager {
     }
 
 
-
     /**
      * Create a {@link  DataSource} (if we know how) defined with the given
      * definingObject.
      *
-     * @param definingObject       This is the data used to create a DataSource.
-     *                             It may be a String (e.g., a URL, a filename)
-     *                             or something else (e.g., a list of URLs).
-     *
+     * @param definingObject This is the data used to create a DataSource.
+     *                       It may be a String (e.g., a URL, a filename)
+     *                       or something else (e.g., a list of URLs).
      * @return The list of {@link DataSource}s defined by the given
      *         definingObject  or null.
      */
@@ -1347,16 +1378,15 @@ public class DataManager {
      * Create a {@link  DataSource} (if we know how) defined with the given
      * definingObject and set of properties (which may be null).
      *
-     * @param definingObject      This is the data used to create a DataSource.
-     *                            It may be a String (e.g., a URL, a filename)
-     *                            or something else (e.g., a list of URLs).
-     * @param properties The properties for the new DataSource.
-     *
+     * @param definingObject This is the data used to create a DataSource.
+     *                       It may be a String (e.g., a URL, a filename)
+     *                       or something else (e.g., a list of URLs).
+     * @param properties     The properties for the new DataSource.
      * @return The list of {@link  DataSource} defined by the given
      *         definingObject  or null.
      */
     public DataSourceResults createDataSource(Object definingObject,
-            Hashtable properties) {
+                                              Hashtable properties) {
         return createDataSource(definingObject, null, properties);
     }
 
@@ -1364,13 +1394,13 @@ public class DataManager {
     /**
      * Ask the user for the data soruce type and create the given data source
      *
-     * @param definingObject      This is the data used to create a DataSource.
-     *                            It may be a String (e.g., a URL, a filename)
-     *                            or something else (e.g., a list of URLs).
-     * @param properties          The properties for the new DataSource.
+     * @param definingObject This is the data used to create a DataSource.
+     *                       It may be a String (e.g., a URL, a filename)
+     *                       or something else (e.g., a list of URLs).
+     * @param properties     The properties for the new DataSource.
      */
     public void createDataSourceAndAskForType(Object definingObject,
-            Hashtable properties) {
+                                              Hashtable properties) {
         String dataType = dataContext.selectDataType(definingObject);
         if (dataType == null) {
             return;
@@ -1378,14 +1408,15 @@ public class DataManager {
         while (true) {
             try {
                 DataSourceResults results = createDataSource(definingObject,
-                                                dataType, properties);
-                if ( !results.anyFailed()) {
+                        dataType, properties);
+                if (!results.anyFailed()) {
                     return;
                 }
-            } catch (BadDataException bde) {}
+            } catch (BadDataException bde) {
+            }
             dataType = dataContext.selectDataType(
-                definingObject,
-                "<html>Failed to load the data as the given type. Try again?</html>");
+                    definingObject,
+                    "<html>Failed to load the data as the given type. Try again?</html>");
             if (dataType == null) {
                 return;
             }
@@ -1393,23 +1424,22 @@ public class DataManager {
     }
 
 
-
     /**
      * Create a {@link  DataSource} (if we know how) defined with the given
      * dataType (if non-null) or by the given definingObject and set of
      * properties (which may be null).
      *
-     * @param definingObject      This is the data used to create a DataSource.
-     *                            It may be a String (e.g., a URL, a filename)
-     *                            or something else (e.g., a list of URLs).
-     * @param dataType            The id of the {@link  DataSourceDescriptor}
-     *                            (or null).
-     * @param properties          The properties for the new DataSource.
+     * @param definingObject This is the data used to create a DataSource.
+     *                       It may be a String (e.g., a URL, a filename)
+     *                       or something else (e.g., a list of URLs).
+     * @param dataType       The id of the {@link  DataSourceDescriptor}
+     *                       (or null).
+     * @param properties     The properties for the new DataSource.
      * @return The list of {@link  DataSource} defined by the given
      *         definingObject  or null.
      */
     public DataSourceResults createDataSource(Object definingObject,
-            String dataType, Hashtable properties) {
+                                              String dataType, Hashtable properties) {
 
 
         if ((dataType != null) && (dataType.length() == 0)) {
@@ -1424,7 +1454,7 @@ public class DataManager {
                 file = file.substring(5);
                 int index = file.indexOf(":");
                 if (index >= 0) {
-                    dataType       = file.substring(0, index);
+                    dataType = file.substring(0, index);
                     definingObject = file.substring(index + 1);
                 }
             }
@@ -1440,11 +1470,11 @@ public class DataManager {
             dataType = (String) properties.get(DATATYPE_ID);
         }
 
-        Object[] lookupKey = new Object[] { definingObject, dataType };
+        Object[] lookupKey = new Object[]{definingObject, dataType};
 
         //Do we already have this dataSource loaded
         DataSource existingDataSource = findDataSource(definingObject,
-                                            lookupKey);
+                lookupKey);
         if (existingDataSource != null) {
             //If we already have one then do a reload on it
             existingDataSource.reloadData();
@@ -1461,11 +1491,11 @@ public class DataManager {
                     dataTypes = new ArrayList(sources.size());
                     for (int i = 0; i < sources.size(); i++) {
                         dataTypes.add(
-                            new DataType(
-                                dataType, sources.get(i),
-                                (Hashtable) properties.get(
-                                    DataSource.PROP_SUBPROPERTIES
-                                    + dataTypes.size())));
+                                new DataType(
+                                        dataType, sources.get(i),
+                                        (Hashtable) properties.get(
+                                                DataSource.PROP_SUBPROPERTIES
+                                                        + dataTypes.size())));
                     }
                 } else {
                     dataTypes = Misc.newList(new DataType(dataType,
@@ -1482,14 +1512,14 @@ public class DataManager {
         //See if we can find the data type from the definingObject (e.g., String pattern matching)
         if (dataTypes == null) {
             dataTypes = getDataTypes(definingObject, allFilters, false,
-                                     properties);
+                    properties);
         }
         DataSourceResults results = new DataSourceResults();
         if ((dataTypes == null) || (dataTypes.size() == 0)) {
             //If it is a string then let's just try the VisadDataSource
             if (definingObject instanceof String) {
                 String overrideDataType =
-                    dataContext.selectDataType(definingObject);
+                        dataContext.selectDataType(definingObject);
                 if (overrideDataType != null) {
                     dataTypes = Misc.newList(new DataType(overrideDataType,
                             definingObject));
@@ -1499,10 +1529,10 @@ public class DataManager {
                 }
             } else {
                 results.addFailed(
-                    definingObject,
-                    new BadDataException(
-                        "Do not know how to handle the given data: "
-                        + definingObject));
+                        definingObject,
+                        new BadDataException(
+                                "Do not know how to handle the given data: "
+                                        + definingObject));
                 return results;
             }
         }
@@ -1512,51 +1542,51 @@ public class DataManager {
             DataType type = (DataType) dataTypes.get(i);
             if (type.isInError()) {
                 results.addFailed(
-                    type.definingObject,
-                    new BadDataException(
-                        "Do not know how to handle the given data: "
-                        + type.definingObject));
+                        type.definingObject,
+                        new BadDataException(
+                                "Do not know how to handle the given data: "
+                                        + type.definingObject));
                 break;
             }
-            dataType       = type.dataTypeId;
+            dataType = type.dataTypeId;
             definingObject = type.definingObject;
             DataSourceDescriptor descriptor = getDescriptor(dataType);
             if (descriptor == null) {
                 results.addFailed(
-                    type.definingObject,
-                    new BadDataException(
-                        "No factory for dataType: " + dataType));
+                        type.definingObject,
+                        new BadDataException(
+                                "No factory for dataType: " + dataType));
                 break;
             }
 
             LogUtil.consoleMessage("Loading in data source: "
-                                   + descriptor.getLabel());
+                    + descriptor.getLabel());
             LogUtil.message("Loading in data source: "
-                            + descriptor.getLabel());
+                    + descriptor.getLabel());
 
             try {
                 Class factoryClass = descriptor.getFactoryClass();
                 if (factoryClass == null) {
                     results.addFailed(
-                        type.definingObject,
-                        new BadDataException(
-                            "No factory for dataType: " + dataType));
+                            type.definingObject,
+                            new BadDataException(
+                                    "No factory for dataType: " + dataType));
                     break;
                 }
 
 
                 Constructor ctor = Misc.findConstructor(factoryClass,
-                                       new Class[] {
-                                           DataSourceDescriptor.class,
-                                           definingObject.getClass(),
-                                           Hashtable.class });
+                        new Class[]{
+                                DataSourceDescriptor.class,
+                                definingObject.getClass(),
+                                Hashtable.class});
                 if (ctor == null) {
                     results.addFailed(
-                        type.definingObject,
-                        new IllegalArgumentException(
-                            "No constructor found for class:"
-                            + factoryClass.getName() + " data:"
-                            + definingObject.getClass()));
+                            type.definingObject,
+                            new IllegalArgumentException(
+                                    "No constructor found for class:"
+                                            + factoryClass.getName() + " data:"
+                                            + definingObject.getClass()));
                     break;
                 }
 
@@ -1568,9 +1598,9 @@ public class DataManager {
                     propertiesToUse = properties;
                 }
                 DataSourceFactory factory =
-                    (DataSourceFactory) ctor.newInstance(new Object[] {
-                        descriptor,
-                        definingObject, propertiesToUse });
+                        (DataSourceFactory) ctor.newInstance(new Object[]{
+                                descriptor,
+                                definingObject, propertiesToUse});
                 DataSource dataSource = factory.getDataSource();
 
                 if (dataSource != null) {
@@ -1580,15 +1610,15 @@ public class DataManager {
                     if (dataSource.getInError()) {
                         if (dataSource.getNeedToShowErrorToUser()) {
                             results.addFailed(
-                                definingObject,
-                                new BadDataException(
-                                    dataSource.getErrorMessage()));
+                                    definingObject,
+                                    new BadDataException(
+                                            dataSource.getErrorMessage()));
                         }
                         break;
                     } else {
                         if (addDataSource(dataSource)) {
-                            lookupKey = new Object[] { definingObject,
-                                    dataType };
+                            lookupKey = new Object[]{definingObject,
+                                    dataType};
                             definingObjectToDataSource.put(lookupKey,
                                     dataSource);
                             dataSourceToDefiningObject.put(dataSource,
@@ -1597,7 +1627,7 @@ public class DataManager {
                             int idx = dataSources.indexOf(dataSource);
                             if (idx >= 0) {
                                 ((DataSource) dataSources.get(
-                                    idx)).reloadData();
+                                        idx)).reloadData();
                             }
                         }
                     }
@@ -1605,29 +1635,29 @@ public class DataManager {
                 results.addSuccess(dataSource, definingObject);
             } catch (java.lang.IllegalArgumentException iae) {
                 results.addFailed(definingObject,
-                                  new BadDataException("Cannot open file: "
-                                      + definingObject, iae));
+                        new BadDataException("Cannot open file: "
+                                + definingObject, iae));
                 break;
             } catch (java.lang.reflect.InvocationTargetException ite) {
                 results.addFailed(
-                    definingObject,
-                    new BadDataException(
-                        "Error creating data source:" + dataType + " with: "
-                        + definingObject + "\n", ite.getTargetException()));
+                        definingObject,
+                        new BadDataException(
+                                "Error creating data source:" + dataType + " with: "
+                                        + definingObject + "\n", ite.getTargetException()));
                 break;
             } catch (WrapperException wexc) {
                 results.addFailed(
-                    definingObject, new BadDataException(
-                        "Error creating data source:" + dataType + " with: "
-                        + definingObject + "\n" + wexc.getMessage()
-                        + "\n", wexc.getException()));
+                        definingObject, new BadDataException(
+                                "Error creating data source:" + dataType + " with: "
+                                        + definingObject + "\n" + wexc.getMessage()
+                                        + "\n", wexc.getException()));
                 break;
             } catch (Throwable exc) {
                 results.addFailed(
-                    definingObject,
-                    new BadDataException(
-                        "Error creating data source:" + dataType + " with: "
-                        + definingObject + "\n", exc));
+                        definingObject,
+                        new BadDataException(
+                                "Error creating data source:" + dataType + " with: "
+                                        + definingObject + "\n", exc));
                 break;
             }
         }
@@ -1635,13 +1665,12 @@ public class DataManager {
     }
 
 
-
     /**
      * Seed the given encoder with the {@link  DataSourceDescriptor}s and the
      * DataManager object.
      *
-     * @param encoder   The encoder to seed.
-     * @param forRead   Is this encoding for a read or a write.
+     * @param encoder The encoder to seed.
+     * @param forRead Is this encoding for a read or a write.
      */
     public void initEncoder(XmlEncoder encoder, boolean forRead) {
         encoder.defineObjectId(this, "datamanager");
@@ -1652,15 +1681,15 @@ public class DataManager {
         if (forRead) {
             for (int i = 0; i < descriptors.size(); i++) {
                 DataSourceDescriptor descriptor =
-                    (DataSourceDescriptor) descriptors.get(i);
+                        (DataSourceDescriptor) descriptors.get(i);
                 encoder.defineObjectId(descriptor,
-                                       "DESC:" + descriptor.getId());
+                        "DESC:" + descriptor.getId());
                 //For backward compatibility.
                 encoder.defineObjectId(descriptor,
-                                       "DESC:"
-                                       + descriptor.getId().toUpperCase());
+                        "DESC:"
+                                + descriptor.getId().toUpperCase());
                 encoder.defineObjectId(descriptor,
-                                       "desc:" + descriptor.getId());
+                        "desc:" + descriptor.getId());
 
             }
         }
@@ -1673,8 +1702,7 @@ public class DataManager {
     /**
      * Find the {@link  DataSourceDescriptor} with the given dataType id.
      *
-     * @param  dataType     The dataType id to lookup.
-     *
+     * @param dataType The dataType id to lookup.
      * @return The DataSourceDescriptor defined by the given dataType (or null).
      */
     public DataSourceDescriptor getDescriptor(String dataType) {
@@ -1682,15 +1710,15 @@ public class DataManager {
             return null;
         }
         return (DataSourceDescriptor) idToDescriptor.get(
-            dataType.toLowerCase());
+                dataType.toLowerCase());
     }
 
     /**
      * Find the given property on the {@link  DataSourceDescriptor} defined
      * by the given dataType.
      *
-     * @param dataType             The data source descriptor id.
-     * @param property             The property name.
+     * @param dataType The data source descriptor id.
+     * @param property The property name.
      * @return The property or null.
      */
     public String getProperty(String dataType, String property) {
@@ -1708,10 +1736,10 @@ public class DataManager {
      * Find the given property on the {@link  DataSourceDescriptor} defined
      * by the given dataType. If not found then return the given dflt.
      *
-     *  @param dataType         The data source descriptor id.
-     *  @param property         The property name.
-     *  @param dflt             The default value.
-     *  @return The property or the dflt parameter.
+     * @param dataType The data source descriptor id.
+     * @param property The property name.
+     * @param dflt     The default value.
+     * @return The property or the dflt parameter.
      */
     public boolean getProperty(String dataType, String property,
                                boolean dflt) {
@@ -1724,7 +1752,7 @@ public class DataManager {
 
 
     /**
-     *  Add in the AddeURLStreamHandler
+     * Add in the AddeURLStreamHandler
      */
     public void initURLStreamHandlers() {
         try {
@@ -1733,7 +1761,7 @@ public class DataManager {
                         String protocol) {
                     if (protocol.equalsIgnoreCase("adde")) {
                         return new edu.wisc.ssec.mcidas.adde
-                            .AddeURLStreamHandler();
+                                .AddeURLStreamHandler();
                     } else if (protocol.equalsIgnoreCase(
                             PluginManager.PLUGIN_PROTOCOL)) {
                         return new URLStreamHandler() {
@@ -1743,7 +1771,7 @@ public class DataManager {
                                             getClass()).openConnection();
                                 } catch (Exception exc) {
                                     LogUtil.logException(
-                                        "Handling idvresource", exc);
+                                            "Handling idvresource", exc);
                                     return null;
                                 }
                             }
@@ -1754,14 +1782,15 @@ public class DataManager {
                     }
                 }
             });
-        } catch (Throwable exc) {}
+        } catch (Throwable exc) {
+        }
     }
 
     /**
      * Check if an object is a data source that holds formulas.
      *
-     * @param s   object to check
-     * @return  true if it is
+     * @param s object to check
+     * @return true if it is
      */
     public static boolean isFormulaDataSource(Object s) {
         return (s instanceof DescriptorDataSource);
@@ -1772,14 +1801,13 @@ public class DataManager {
      * test main
      *
      * @param args cmd line args
-     *
      * @throws Exception On error
      */
     public static void main(String[] args) throws Exception {
         Grib2Indexer indexer;
 
         Trace.startTrace();
-        Unit     unit     = DataUtil.parseUnit("k");
+        Unit unit = DataUtil.parseUnit("k");
         RealType realType = DataUtil.makeRealType("temp", unit);
         Trace.call1("start");
         for (int i = 0; i < 2000000; i++) {
@@ -1789,11 +1817,7 @@ public class DataManager {
         Trace.call2("start");
 
 
-
     }
-
-
-
 
 
 }
