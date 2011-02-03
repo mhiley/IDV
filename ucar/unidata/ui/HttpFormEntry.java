@@ -24,6 +24,9 @@ package ucar.unidata.ui;
 
 
 
+import opendap.dap.http.HTTPException;
+import opendap.dap.http.HTTPMethod;
+import opendap.dap.http.HTTPSession;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.multipart.*;
@@ -576,7 +579,7 @@ public class HttpFormEntry {
 
 
     /**
-     * Post the given entries tot he given url
+     * Post the given entries to the given url
      *
      * @param entries The entries
      * @param urlPath The url to post to
@@ -585,13 +588,14 @@ public class HttpFormEntry {
      * Second element is non-null if no error. This is the returned html.
      */
     public static String[] doPost(List entries, String urlPath) {
+	HTTPSession session = null;
+	HTTPMethod postMethod = null;
         try {
-            PostMethod postMethod = null;
+	    session = new HTTPSession();
             int numTries = 0;
             while(numTries++<5) {
-                postMethod =  getMethod(entries, urlPath);
-                HttpClient client      = new HttpClient();
-                client.executeMethod(postMethod);
+                postMethod =  getMethod(session, entries, urlPath);
+                postMethod.execute();
                 if (postMethod.getStatusCode() >= 300 && postMethod.getStatusCode()<=399) {
                     Header locationHeader = postMethod.getResponseHeader("location");
                     if (locationHeader == null) {
@@ -616,13 +620,16 @@ public class HttpFormEntry {
             }
         } catch (Exception exc) {
             throw new WrapperException("doing post", exc);
-        }
-
+        } finally {
+	    if(session != null) session.close();
+	}
     }
 
 
-    private static PostMethod getMethod(List entries, String urlPath) {
-        PostMethod postMethod  = new PostMethod(urlPath);
+    private static HTTPMethod getMethod(HTTPSession session, List entries, String urlPath)
+        throws HTTPException
+    {
+        HTTPMethod postMethod  = session.newMethodPost(urlPath);
         boolean    anyFiles    = false;
         int        count       = 0;
         List       goodEntries = new ArrayList();
@@ -636,7 +643,6 @@ public class HttpFormEntry {
                 anyFiles = true;
             }
         }
-
             
         if (anyFiles) {
             Part[] parts = new Part[goodEntries.size()];
@@ -644,7 +650,7 @@ public class HttpFormEntry {
                 HttpFormEntry formEntry =
                     (HttpFormEntry) goodEntries.get(i);
                 if (formEntry.type == TYPE_FILE) {
-                    parts[i] = formEntry.getFilePart();
+                   parts[i] = formEntry.getFilePart();
                 } else {
                     //Not sure why but we have seen a couple of times
                     //the byte value '0' gets into one of these strings
@@ -658,15 +664,12 @@ public class HttpFormEntry {
                     parts[i] = new StringPart(formEntry.getName(), value);
                 }
             }
-            postMethod.setRequestEntity(new MultipartRequestEntity(parts,
-                                                                   postMethod.getParams()));
+            postMethod.setMultipartRequest(parts);
         } else {
             for (int i = 0; i < goodEntries.size(); i++) {
                 HttpFormEntry formEntry =
                     (HttpFormEntry) goodEntries.get(i);
-                postMethod.addParameter(
-                                        new NameValuePair(
-                                                          formEntry.getName(), formEntry.getValue()));
+                postMethod.setRequestParameter(formEntry.getName(), formEntry.getValue());
             }
         }
 

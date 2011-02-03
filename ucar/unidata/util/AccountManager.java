@@ -27,9 +27,7 @@ import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.auth.CredentialsNotAvailableException;
 import org.apache.commons.httpclient.auth.CredentialsProvider;
-import org.apache.commons.httpclient.auth.RFC2617Scheme;
 
 /*
 import org.apache.http.auth.AuthScheme;
@@ -42,8 +40,6 @@ import org.apache.http.impl.auth.RFC2617Scheme;
 */
 
 
-import ucar.unidata.util.GuiUtils;
-import ucar.unidata.util.Misc;
 import ucar.unidata.xml.XmlEncoder;
 import ucar.unidata.xml.XmlUtil;
 
@@ -52,8 +48,6 @@ import java.awt.*;
 import java.awt.event.*;
 
 import java.io.File;
-
-import java.net.*;
 
 import java.util.Enumeration;
 
@@ -100,14 +94,13 @@ public class AccountManager implements CredentialsProvider,
      * This keeps track of username/passwords we've been using during the current run.
      *   This allows us to know when one failed so we don't keep looping
      */
-    private Hashtable currentlyUsedOnes = new Hashtable();
+    private Hashtable namepwCache = new Hashtable();
 
     /** This is where we write and read the persistent state */
     private File stateDir;
 
     /** Save last created credentials */
     private Credentials currentCredentials = null;
-
 
     /**
      * constructor
@@ -117,14 +110,6 @@ public class AccountManager implements CredentialsProvider,
      */
     public AccountManager(File stateDir) {
         this.stateDir = stateDir;
-    }
-
-    /**
-     * _more_
-     */
-    public void clear() {
-        //TODO: Figure out what this should do
-        currentCredentials = null;
     }
 
     /**
@@ -155,56 +140,40 @@ public class AccountManager implements CredentialsProvider,
     /**
      * _more_
      *
-     * @param scope _more_
-     * @param credentials _more_
      */
-    public void setCredentials(AuthScope scope, Credentials credentials) {
-        //TODO: What should this do?
-        if (scope == null) {
-            throw new IllegalArgumentException(
-                "Authentication scope may not be null");
-        }
+    private void setCredentials(AuthScheme scheme, String host,int port) {
 
-
-        String key = scope.getHost() + ":" + scope.getPort() + ":"
-                     + scope.getRealm();
+        String key = host + ":" + port + ":" + scheme.getRealm();
         //        System.err.println ("got auth call " + key);
 
         UserInfo userInfo = getUserNamePassword(key,
-                                "The server " + scope.getHost() + ":"
-                                + scope.getPort()
+                                "The server " + host + ":"
+                                + port
                                 + " requires a username/password");
         if (userInfo == null) {
             return;
         }
 
-        if (credentials == null) {
-            currentCredentials =
+        currentCredentials =
                 new UsernamePasswordCredentials(userInfo.getUserId(),
                     userInfo.getPassword());
-        } else {
-            currentCredentials = credentials;
-        }
     }
 
     /**
      * Do the authentication
-     * @param authscope authscope
+     * @param scheme authscope
      *
      * @return Null if the user presses cancel. Else return the credentials
      *
      */
-    //jeffmc:    public Credentials getCredentials(AuthScope authscope, String s,int x, boolean y) {
-    public Credentials getCredentials(AuthScheme authscope, String s,int x, boolean y) {
-        if (authscope == null) {
+    public Credentials getCredentials(AuthScheme scheme, String host,int port, boolean proxy) {
+        if (scheme == null) {
             throw new IllegalArgumentException(
-                "Authentication scope may not be null");
+                "Authentication scheme may not be null");
         }
-
-        if (currentCredentials == null) {
-            //jeffmc: skip for now            setCredentials(authscope, null);
+        if(currentCredentials == null) {
+            setCredentials(scheme,host,port);
         }
-
         return currentCredentials;
     }
 
@@ -215,6 +184,7 @@ public class AccountManager implements CredentialsProvider,
      *
      * @return _more_
      */
+ /* IGNORE
     public Credentials getCredentialsnew(AuthScope scope) {
         //String host,                                   int port, boolean proxy
         String host  = scope.getHost();
@@ -229,14 +199,14 @@ public class AccountManager implements CredentialsProvider,
             throw new IllegalArgumentException("Null scope");
         }
 
-        /*
+
           //TODO: check if the scheme in the auth is rfc26217
-        if ( !(scheme instanceof RFC2617Scheme)) {
-            throw new InvalidCredentialsException(
-                "Unsupported authentication scheme: "
-                + scheme.getSchemeName());
-        }
-        */
+        //if ( !(scheme instanceof RFC2617Scheme)) {
+        //    throw new InvalidCredentialsException(
+        //        "Unsupported authentication scheme: "
+         //       + scheme.getSchemeName());
+        //}
+
 
         String key = host + ":" + port + ":" + realm;
         //        System.err.println ("got auth call " + key);
@@ -249,7 +219,7 @@ public class AccountManager implements CredentialsProvider,
         return new UsernamePasswordCredentials(userInfo.getUserId(),
                 userInfo.getPassword());
     }
-
+*/
 
 
     /**
@@ -264,7 +234,7 @@ public class AccountManager implements CredentialsProvider,
         UserInfo userInfo = getTable().get(key);
 
         if (userInfo != null) {
-            if (currentlyUsedOnes.get(userInfo) != null) {
+            if (namepwCache.get(userInfo) != null) {
                 userInfo = null;
             }
         }
@@ -289,7 +259,7 @@ public class AccountManager implements CredentialsProvider,
                 writeTable();
             }
         }
-        currentlyUsedOnes.put(userInfo, "");
+        namepwCache.put(userInfo, "");
         return userInfo;
     }
 

@@ -62,7 +62,7 @@ import javax.swing.event.*;
 public class DefaultIdv extends IntegratedDataViewer {
 
 
-    /**
+    /**                                                           
      * Parameterless ctor. Why? I'm not quite sure.
      *
      * @throws RemoteException

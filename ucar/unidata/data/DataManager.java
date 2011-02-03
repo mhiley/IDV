@@ -21,22 +21,14 @@
 package ucar.unidata.data;
 
 
+import opendap.dap.http.HTTPSession;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ucar.unidata.idv.IdvResourceManager;
 import ucar.unidata.idv.PluginManager;
-import ucar.unidata.util.CacheManager;
-import ucar.unidata.util.IOUtil;
-import ucar.unidata.util.LogUtil;
-import ucar.unidata.util.Misc;
-import ucar.unidata.util.PatternFileFilter;
-import ucar.unidata.util.ResourceCollection;
-import ucar.unidata.util.StringUtil;
-import ucar.unidata.util.Trace;
-import ucar.unidata.util.TwoFacedObject;
-import ucar.unidata.util.WrapperException;
+import ucar.unidata.util.*;
 import ucar.unidata.xml.XmlEncoder;
 import ucar.unidata.xml.XmlResourceCollection;
 import ucar.unidata.xml.XmlUtil;
@@ -50,7 +42,7 @@ import visad.VisADException;
 
 import visad.data.text.TextAdapter;
 
-
+import org.apache.commons.httpclient.auth.CredentialsProvider; 
 
 //import org.apache.http.client.CredentialsProvider;
 //import opendap.dap.HttpWrap;
@@ -356,7 +348,6 @@ public class DataManager {
                 .setMemoryPercent(dataContext.getIdv().getStateManager()
                     .getPreferenceOrProperty(PROP_CACHE_PERCENT, 0.25));
 
-            /*
             AccountManager accountManager =
                 AccountManager.getGlobalAccountManager();
             if (accountManager == null) {
@@ -364,20 +355,9 @@ public class DataManager {
                     dataContext.getIdv().getStore().getUserDirectory());
                 AccountManager.setGlobalAccountManager(accountManager);
             }
-            CredentialsProvider provider = accountManager;
-            try {
-                HttpWrap client = new HttpWrap();
-                client.setGlobalCredentialsProvider(provider);
-                // fix opendap.dap.DConnect2.setHttpClient(client);
-                ucar.unidata.io.http.HTTPRandomAccessFile.setHttpClient(
-                    client);
-            } catch (Exception exc) {
-                LogUtil.printException(log_, "Cannot create http client",
-                                       exc);
-            }
-            */
+	    CredentialsProvider provider = (CredentialsProvider)AccountManager.getGlobalAccountManager();
+            HTTPSession.setGlobalCredentialsProvider(provider);
         }
-
 
         String defaultBoundingBoxString =
             dataContext.getIdv().getProperty(PROP_GEOSUBSET_BBOX,
