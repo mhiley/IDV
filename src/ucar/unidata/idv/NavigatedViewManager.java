@@ -401,7 +401,8 @@ public abstract class NavigatedViewManager extends ViewManager {
         vertRangeWidget = getViewpointControl().makeVerticalRangeWidget(
             getBp(PREF_SHOWSCALES));
         tabbedPane.add("Vertical Range", GuiUtils.topLeft(vertRangeWidget));
-        vertRangeWidget.getVertScaleInfo().visible = getBp(PREF_SHOWSCALES);
+        
+        vertRangeWidget.getVertScaleInfo().visible = getNavigatedDisplay().getScalesVisible();
 
     }
 
