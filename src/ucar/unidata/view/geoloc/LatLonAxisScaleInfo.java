@@ -221,6 +221,16 @@ public class LatLonAxisScaleInfo extends ucar.visad.display.AxisScaleInfo {
         if (visible != other.visible) {
             return false;
         }
-        return true;
+        return true
+                ;
+    }
+    /**
+     * Sets the visible.
+     *
+     * @param visible the new visible
+     */
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        this.visible = visible;
     }
 }

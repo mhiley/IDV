@@ -386,7 +386,7 @@ public abstract class NavigatedViewManager extends ViewManager {
 
         boolean b = vertRangeWidget.isAxisVisible();
 
-        setBp(PREF_SHOWSCALES, b);
+        //setBp(PREF_SHOWSCALES, b);
 
         return vertRangeWidget.doApply();
     }

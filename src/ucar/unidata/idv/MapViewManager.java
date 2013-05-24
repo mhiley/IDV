@@ -2418,7 +2418,7 @@ public class MapViewManager extends NavigatedViewManager {
                         || latLonScaleWidget.isLatVisible()
                         || latLonScaleWidget.isLonVisible());
 
-        setBp(PREF_SHOWSCALES, b);
+        //setBp(PREF_SHOWSCALES, b);
 
         return latLonScaleWidget.doApply();
     }
